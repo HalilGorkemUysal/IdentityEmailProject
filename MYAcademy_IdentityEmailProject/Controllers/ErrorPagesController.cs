@@ -16,5 +16,24 @@ namespace MYAcademy_IdentityEmailProject.Controllers
         {
             return View();
         }
+
+
+        public IActionResult HandleError(int id)
+        {
+            if(id == 401)
+            {
+                return View("Page401");
+            }
+            if(id == 403)
+            {
+                return View("Page403");
+            }
+            if(id == 404)
+            {
+                return View("Page404");
+            }
+
+            return View();
+        }
     }
 }
