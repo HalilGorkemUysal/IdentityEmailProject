@@ -1,0 +1,723 @@
+﻿@model Message
+
+@{
+    ViewData["Title"] = Model.Subject;
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var sender = Model.SenderEmail ?? "";
+    var initial = sender.Length > 0
+        ? sender.Substring(0, 1).ToUpperInvariant()
+        : "?";
+}
+
+<style>
+    .mail-detail {
+        --md-primary: #8174df;
+        --md-text: #30334d;
+        --md-muted: #8990a7;
+        --md-border: #e8e9f4;
+        font-family: 'DM Sans', sans-serif;
+        padding: 24px;
+        color: var(--md-text);
+        max-width: 1150px;
+        margin: 0 auto;
+    }
+
+        .mail-detail * {
+            box-sizing: border-box;
+        }
+
+    .md-card {
+        background: #fff;
+        border: 1px solid var(--md-border);
+        border-radius: 23px;
+        overflow: hidden;
+        box-shadow: 0 12px 40px rgba(65,58,120,.06);
+    }
+
+    .md-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 25px;
+        border-bottom: 1px solid var(--md-border);
+    }
+
+    .md-toolbar-left,
+    .md-toolbar-right {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .md-toolbar form,
+    .md-actions form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+    .md-thread {
+        margin-top: 30px;
+        padding-top: 24px;
+        border-top: 1px solid var(--md-border);
+    }
+
+    .md-thread-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--md-muted);
+        margin-bottom: 14px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .md-thread-item {
+        background: #f9f8ff;
+        border: 1px solid var(--md-border);
+        border-left: 4px solid #beb4ef;
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin-bottom: 12px;
+        user-select: text;
+    }
+
+    .md-thread-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+    .md-thread-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg,#ece8ff,#dcd6ff);
+        color: #8174df;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .md-thread-meta {
+        flex: 1;
+        min-width: 0;
+    }
+
+        .md-thread-meta strong {
+            display: block;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .md-thread-meta small {
+            color: var(--md-muted);
+            font-size: 11px;
+            overflow-wrap: anywhere;
+        }
+
+    .md-thread-date {
+        color: var(--md-muted);
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .md-thread-body {
+        font-size: 14px;
+        line-height: 1.8;
+        color: #555b74;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .md-icon-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: transparent;
+        color: #81879e;
+        border-radius: 11px;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 18px;
+        transition: .2s;
+    }
+
+        .md-icon-btn:hover {
+            background: #f2f0ff;
+            color: var(--md-primary);
+        }
+
+        .md-icon-btn.danger:hover {
+            background: #fff0f2;
+            color: #e3687c;
+        }
+
+        .md-icon-btn.starred {
+            color: #efb744;
+        }
+
+    .md-divider {
+        width: 1px;
+        height: 24px;
+        background: var(--md-border);
+        margin: 0 5px;
+    }
+
+    .md-body {
+        padding: 34px 40px;
+    }
+
+    .md-subject {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+        .md-subject h1 {
+            font-size: 27px;
+            line-height: 1.35;
+            font-weight: 800;
+            letter-spacing: -.8px;
+            overflow-wrap: anywhere;
+            margin: 0;
+        }
+
+    .md-inbox-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #776bd1;
+        background: #f2efff;
+        padding: 7px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .md-sender {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 30px;
+    }
+
+    .md-avatar {
+        width: 49px;
+        height: 49px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg,#ece8ff,#dcd6ff);
+        color: #8174df;
+        font-size: 20px;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+
+    .md-sender-info {
+        min-width: 0;
+        flex: 1;
+    }
+
+        .md-sender-info strong {
+            display: block;
+            font-size: 15px;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .md-sender-info small {
+            display: block;
+            color: var(--md-muted);
+            font-size: 12px;
+            margin-top: 4px;
+            overflow-wrap: anywhere;
+        }
+
+    .md-date {
+        color: var(--md-muted);
+        font-size: 12px;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+        .md-date i {
+            margin-right: 5px;
+        }
+
+    .md-content {
+        border-top: 1px solid var(--md-border);
+        border-bottom: 1px solid var(--md-border);
+        padding: 35px 5px;
+        min-height: 200px;
+        font-size: 15px;
+        line-height: 1.95;
+        color: #555b74;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+    }
+
+    .md-actions {
+        padding-top: 30px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 11px;
+    }
+
+    .md-btn {
+        border: 1px solid var(--md-border);
+        border-radius: 12px;
+        min-height: 45px;
+        padding: 0 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        background: white;
+        color: #626882;
+        text-decoration: none;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+        .md-btn:hover {
+            border-color: #beb4ef;
+            background: #f8f6ff;
+            color: var(--md-primary);
+        }
+
+        .md-btn.primary {
+            color: white;
+            background: linear-gradient(100deg,#9184e9,#7163d3);
+            border: none;
+            box-shadow: 0 8px 20px rgba(113,99,211,.20);
+        }
+
+            .md-btn.primary:hover {
+                transform: translateY(-2px);
+                color: white;
+            }
+
+        .md-btn.danger {
+            color: #dc6478;
+        }
+
+            .md-btn.danger:hover {
+                background: #fff0f2;
+                border-color: #f2c5ce;
+            }
+
+        .md-btn .bi-star-fill {
+            color: #efb744;
+        }
+
+    .md-footer-note {
+        margin-top: 26px;
+        color: #9a9fb3;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* SİLME ONAY PENCERESİ */
+
+    .md-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(32,33,60,.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+        .md-modal-backdrop.active {
+            display: flex;
+        }
+
+    .md-modal {
+        background: #fff;
+        border-radius: 23px;
+        padding: 35px;
+        max-width: 410px;
+        width: 100%;
+        box-shadow: 0 24px 80px rgba(0,0,0,.15);
+        text-align: center;
+    }
+
+    .md-modal-icon {
+        width: 70px;
+        height: 70px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff0f2;
+        border-radius: 21px;
+        color: #e3687c;
+        font-size: 29px;
+    }
+
+    .md-modal h2 {
+        font-size: 22px;
+        font-weight: 800;
+        margin-bottom: 12px;
+    }
+
+    .md-modal p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: #8990a7;
+        margin-bottom: 25px;
+    }
+
+    .md-modal-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .md-modal .confirm-delete {
+        background: #e3687c;
+        color: white;
+        border-color: #e3687c;
+    }
+
+        .md-modal .confirm-delete:hover {
+            background: #d45268;
+            color: white;
+        }
+
+    @@media(max-width: 700px) {
+        .mail-detail {
+            padding: 12px;
+        }
+
+        .md-toolbar {
+            padding: 12px;
+        }
+
+        .md-body {
+            padding: 23px 18px;
+        }
+
+        .md-subject {
+            flex-direction: column;
+        }
+
+            .md-subject h1 {
+                font-size: 22px;
+            }
+
+        .md-sender {
+            flex-wrap: wrap;
+        }
+
+        .md-date {
+            width: 100%;
+            text-align: left;
+            padding-left: 63px;
+        }
+
+        .md-content {
+            padding: 25px 0;
+        }
+
+        .md-actions .md-btn {
+            flex: 1;
+        }
+    }
+</style>
+
+<main class="mail-detail">
+    <article class="md-card">
+
+        <!-- ÜST ARAÇ ÇUBUĞU -->
+        <div class="md-toolbar">
+
+            <div class="md-toolbar-left">
+
+                <a asp-controller="Message"
+                   asp-action="Inbox"
+                   class="md-icon-btn"
+                   title="Gelen kutusuna dön"
+                   aria-label="Gelen kutusuna dön">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+
+                <span class="md-divider"></span>
+
+                <!-- SİL -->
+                <button type="button"
+                        class="md-icon-btn danger"
+                        title="Mesajı sil"
+                        aria-label="Mesajı sil"
+                        onclick="openDeleteModal()">
+                    <i class="bi bi-trash3"></i>
+                </button>
+
+                <!-- OKUNMADI İŞARETLE -->
+                <form asp-controller="Message"
+                      asp-action="MarkAsUnread"
+                      asp-route-id="@Model.MessageId"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <button type="submit"
+                            class="md-icon-btn @(Model.IsFavourite ? "starred" : "")"
+                            title="@(Model.IsFavourite ? "Yıldızı kaldır" : "Yıldız ekle")"
+                            aria-label="@(Model.IsFavourite ? "Yıldızı kaldır" : "Yıldız ekle")">
+
+                        <i class="bi @(Model.IsFavourite ? "bi-star-fill" : "bi-star")"></i>
+                    </button>
+                </form>
+
+            </div>
+
+            <div class="md-toolbar-right">
+
+                <!-- YILDIZ -->
+                <form asp-controller="Message"
+                      asp-action="ToggleStar"
+                      asp-route-id="@Model.MessageId"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <button type="submit"
+                            class="md-icon-btn @@(Model.IsFavourite ? " starred" : "" )"
+                            title="@@(Model.IsFavourite ? " Yıldızı kaldır" : "Yıldız ekle" )"
+                            aria-label="@@(Model.IsFavourite ? " Yıldızı kaldır" : "Yıldız ekle" )">
+
+                        <i class="bi @@(Model.IsFavourite ? " bi-star-fill" : "bi-star" )"></i>
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+        <!-- MESAJ İÇERİĞİ -->
+        <div class="md-body">
+
+            <div class="md-subject">
+
+                <h1>@Model.Subject</h1>
+
+                <span class="md-inbox-tag">
+                    <i class="bi bi-inbox"></i>
+                    Gelen Kutusu
+                </span>
+
+            </div>
+
+            <!-- GÖNDERİCİ -->
+            <div class="md-sender">
+
+                <div class="md-avatar">
+                    @initial
+                </div>
+
+                <div class="md-sender-info">
+
+                    <strong>@Model.SenderEmail</strong>
+
+                    <small>
+                        Gönderen: @Model.SenderEmail
+                    </small>
+
+                    <small>
+                        Alıcı: @Model.ReceiverEmail
+                    </small>
+
+                </div>
+
+                <div class="md-date">
+                    <i class="bi bi-clock"></i>
+                    @Model.SendDate.ToString("dd MMMM yyyy HH:mm",
+                        new System.Globalization.CultureInfo("tr-TR"))
+                </div>
+            </div>
+
+            <!-- MESAJ METNİ -->
+            <div class="md-content">@Model.MessageDetail</div>
+
+            <!-- ALT İŞLEMLER -->
+            <div class="md-actions">
+
+                <!-- YANITLA -->
+                <a asp-controller="Message"
+                   asp-action="CreateMessage"
+                   asp-route-replyTo="@Model.MessageId"
+                   class="md-btn primary">
+
+                    <i class="bi bi-reply"></i>
+                    Yanıtla
+                </a>
+
+                <!-- YILDIZ -->
+                <form asp-controller="Message"
+                      asp-action="ToggleStar"
+                      asp-route-id="@Model.MessageId"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <button type="submit" class="md-btn">
+
+                        @if (Model.IsFavourite)
+                        {
+                            <i class="bi bi-star-fill"></i>
+                            <span>Yıldızı Kaldır</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-star"></i>
+                            <span>Yıldız Ekle</span>
+                        }
+
+                    </button>
+                </form>
+
+                <!-- SİL -->
+                <button type="button"
+                        class="md-btn danger"
+                        onclick="openDeleteModal()">
+
+                    <i class="bi bi-trash3"></i>
+                    Sil
+                </button>
+
+            </div>
+            @{
+                var thread = ViewBag.Thread as List<Message> ?? new List<Message>();
+                var tr = new System.Globalization.CultureInfo("tr-TR");
+            }
+            @if (thread.Any())
+            {
+                <section class="md-thread">
+                    <div class="md-thread-title"><i class="bi bi-chat-left-text"></i> Önceki yazışmalar</div>
+
+                    @foreach (var t in thread)
+                    {
+                        <div class="md-thread-item">
+                            <div class="md-thread-head">
+                                <span class="md-thread-avatar">@(string.IsNullOrEmpty(t.SenderEmail) ? "?" : t.SenderEmail[..1].ToUpperInvariant())</span>
+                                <div class="md-thread-meta">
+                                    <strong>@t.SenderEmail</strong>
+                                    <small>Alıcı: @t.ReceiverEmail</small>
+                                </div>
+                                <span class="md-thread-date">@t.SendDate.ToString("dd MMMM yyyy HH:mm", tr)</span>
+                            </div>
+                            <div class="md-thread-body">@t.MessageDetail</div>
+                        </div>
+                    }
+                </section>
+            }
+
+            <div class="md-footer-note">
+                <i class="bi bi-shield-check"></i>
+                Mailora mesaj yönetimi
+            </div>
+
+        </div>
+    </article>
+</main>
+
+<!-- SİLME ONAY PENCERESİ -->
+<div class="md-modal-backdrop"
+     id="deleteModal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="deleteModalTitle"
+     aria-describedby="deleteModalDescription"
+     aria-hidden="true">
+
+    <div class="md-modal">
+
+        <div class="md-modal-icon">
+            <i class="bi bi-trash3"></i>
+        </div>
+
+        <h2 id="deleteModalTitle">Mesaj Silinsin mi?</h2>
+
+        <p id="deleteModalDescription">
+            Bu mesajı silmek istediğinizden emin misiniz?
+            Bu işlem geri alınamaz.
+        </p>
+
+        <div class="md-modal-actions">
+
+            <button type="button"
+                    class="md-btn"
+                    onclick="closeDeleteModal()">
+                Vazgeç
+            </button>
+
+            <form asp-controller="Message"
+                  asp-action="DeleteMessage"
+                  asp-route-id="@Model.MessageId"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <button type="submit"
+                        class="md-btn confirm-delete">
+
+                    <i class="bi bi-trash3"></i>
+                    Evet, Sil
+                </button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const deleteModal = document.getElementById("deleteModal");
+    const deleteCancel = deleteModal.querySelector(
+        'button[onclick="closeDeleteModal()"]'
+    );
+
+    function openDeleteModal() {
+        deleteModal.classList.add("active");
+        deleteModal.setAttribute("aria-hidden", "false");
+        deleteCancel.focus();
+    }
+
+    function closeDeleteModal() {
+        deleteModal.classList.remove("active");
+        deleteModal.setAttribute("aria-hidden", "true");
+    }
+
+    deleteModal.addEventListener("click", function(event) {
+        if (event.target === deleteModal) {
+            closeDeleteModal();
+        }
+    });
+
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Escape" &&
+            deleteModal.classList.contains("active")) {
+            closeDeleteModal();
+        }
+    });
+</script>

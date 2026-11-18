@@ -104,7 +104,7 @@
             {
                 var snippet = Snippet(m.MessageDetail);
                 var search = $"{m.SenderEmail} {m.SenderEmail} {m.Subject} {snippet}".ToLower(Tr);
-                var detailUrl = Url.Action("Detail", "Inbox", new { id = m.MessageId }) ?? $"/Inbox/Detail/{m.MessageId}";
+                var detailUrl = Url.Action("InboxDetail", "Message", new { id = m.MessageId }) ?? $"/Message/Inbox/{m.MessageId}";
 
                 <article class="msg-item @(m.IsRead ? "" : "unread")"
                          data-id="@m.MessageId"

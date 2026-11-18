@@ -42,6 +42,40 @@
         cursor: pointer;
     }
 
+    .cmp-quote {
+        margin: 0 0 14px;
+        padding: 14px 18px;
+        background: #f7f6ff;
+        border-left: 4px solid var(--accent, #8B7FD6);
+        border-radius: 12px;
+        color: #626882;
+        font-size: .9rem;
+        user-select: text;
+    }
+
+    .cmp-quote-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: .8rem;
+        color: #8990a7;
+        margin-bottom: 6px;
+    }
+
+    .cmp-quote-subject {
+        font-weight: 700;
+        color: #303348;
+        margin-bottom: 6px;
+    }
+
+    .cmp-quote-body {
+        max-height: 180px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        line-height: 1.7;
+    }
+
         .cmp-select:invalid, .cmp-select option[value=""] {
             color: var(--muted, #85899B);
         }
@@ -87,7 +121,7 @@
     </div>
 
     @* Controller adınız farklıysa asp-controller ekleyin: asp-controller="Message" *@
-    <form class="cmp-card" id="cmpForm" asp-action="Create" method="post" novalidate autocomplete="off">
+    <form class="cmp-card" id="cmpForm" asp-action="CreateMessage" method="post" novalidate autocomplete="off">
 
         <!-- Alıcı, kategori & konu -->
         <div class="cmp-fields">
@@ -128,7 +162,25 @@
                 <div class="cmp-err">@ErrText(nameof(Model.Subject))</div>
             </div>
         </div>
+        @{
+            var thread = ViewBag.Thread as List<MYAcademy_IdentityEmailProject.Entities.Message>;
+            var tr = new System.Globalization.CultureInfo("tr-TR");
+        }
+        @if (thread != null && thread.Any())
+        {
+            <input type="hidden" name="replyTo" value="@thread[0].MessageId" />
 
+            @foreach (var t in thread)
+            {
+                <div class="cmp-quote">
+                    <div class="cmp-quote-head">
+                        <i class="bi bi-reply-fill"></i>
+                        <span><b>@t.SenderEmail</b> · @t.SendDate.ToString("dd MMMM yyyy HH:mm", tr)</span>
+                    </div>
+                    <div class="cmp-quote-body">@t.MessageDetail</div>
+                </div>
+            }
+        }
         <!-- Rich text araç çubuğu -->
         <div class="cmp-toolbar" id="cmpToolbar" role="toolbar" aria-label="Biçimlendirme">
             <div class="tb-wrap">
@@ -221,7 +273,7 @@
 @section Scripts {
     <script>
         /* ======================================================================
-           YENİ MESAJ — form normal POST ile gönderilir (asp-action="Create").
+           YENİ MESAJ — form normal POST ile gönderilir (asp-action="CreateMessage").
            JS: zengin metin editörü, istemci doğrulaması, Ctrl+Enter, temizle onayı.
            ====================================================================== */
         (() => {
@@ -271,7 +323,7 @@
             function updateCounter() {
                 const text = editor.innerText.replace(/ /g, ' ').trim();
                 const words = text ? text.split(/\s+/).length : 0;
-                ('#cmpCounter').textContent = `{words.toLocaleString('tr-TR')} kelime · ${text.length.toLocaleString('tr-TR')} karakter`;
+                $('#cmpCounter').textContent = `${words.toLocaleString('tr-TR')} kelime · ${text.length.toLocaleString('tr-TR')} karakter`;
             }
 
             editor.addEventListener('input', () => { syncContent(); updateCounter(); clearFieldError($('#rowBody')); markDirty(); });
@@ -308,7 +360,7 @@
                 editor.focus(); restoreSelection();
                 const sel = window.getSelection();
                 if (!sel.rangeCount || sel.isCollapsed || !editor.contains(sel.anchorNode)) {
-                    document.execCommand('insertHTML', false, `<a href="escapeHtml(url)">{escapeHtml(raw)}</a>&nbsp;`);
+                    document.execCommand('insertHTML', false, `<a href="${escapeHtml(url)}">${escapeHtml(raw)}</a>&nbsp;`);
                 } else {
                     document.execCommand('createLink', false, url);
                 }
@@ -324,7 +376,7 @@
                 STATE_CMDS.forEach(c => {
                     let on = false;
                     if (inEditor) { try { on = document.queryCommandState(c); } catch (e) { on = false; } }
-                    (`[data-cmd="{c}"]`, tb)?.classList.toggle('active', on);
+                    $(`[data-cmd="${c}"]`, tb)?.classList.toggle('active', on);
                 });
                 let block = '';
                 if (inEditor) { try { block = String(document.queryCommandValue('formatBlock') || '').toLowerCase().replace(/[<>]/g, ''); } catch (e) { block = ''; } }
@@ -332,7 +384,7 @@
             }
 
             function togglePop(name, btn) {
-                const pop = (`[data-pop-for="{name}"]`);
+                const pop = $(`[data-pop-for="${name}"]`);
                 const willOpen = !pop.classList.contains('show');
                 closePops();
                 if (!willOpen) return;

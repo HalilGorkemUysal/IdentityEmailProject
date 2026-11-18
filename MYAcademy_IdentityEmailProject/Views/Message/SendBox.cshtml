@@ -1,13 +1,146 @@
-﻿@model List<Message>
+﻿@model List<MYAcademy_IdentityEmailProject.Entities.Message>
+@using System.Globalization
+@using System.Net
+@using System.Text.RegularExpressions
 @{
-    Layout = null;
+    ViewData["Title"] = "Gönderilenler";
+    ViewData["ActiveMenu"] = "sent";   // sidebar'daki data-menu değerine göre düzelt
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var messages = (Model ?? new List<MYAcademy_IdentityEmailProject.Entities.Message>())
+                   .OrderByDescending(m => m.SendDate)
+                   .ToList();
+}
+@functions {
+    static readonly CultureInfo Tr = new("tr-TR");
+    static readonly string[] AvatarColors = { "av-lav", "av-blue", "av-mint", "av-rose", "av-peach", "av-sun" };
+
+    static string Initials(string? s) =>
+        string.IsNullOrWhiteSpace(s) ? "?" : s.Trim()[..1].ToUpper(Tr);
+
+    static string AvatarColor(string? key)
+    {
+        var h = 0;
+        foreach (var c in key ?? "") h = (h * 31 + c) & 0x7fffffff;
+        return AvatarColors[h % AvatarColors.Length];
+    }
+
+    static string Snippet(string? text, int max = 140)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        var t = Regex.Replace(WebUtility.HtmlDecode(text), @"\s+", " ").Trim();
+        return t.Length > max ? t[..max].TrimEnd() + "…" : t;
+    }
+
+    static string ShortTime(DateTime d)
+    {
+        var today = DateTime.Today;
+        if (d.Date == today) return d.ToString("HH:mm", Tr);
+        if (d.Date == today.AddDays(-1)) return "Dün";
+        if (d.Year == today.Year) return d.ToString("d MMM", Tr);
+        return d.ToString("dd.MM.yyyy", Tr);
+    }
 }
 
-@foreach (var item in Model)
-{
-    <tr>
-        <td>@item.ReceiverEmail</td>
-        <td>@item.Subject</td>
-        <td>@item.SendDate.ToString("dd.MM.yyyy HH:mm")</td>
-    </tr>
+<section class="inbox" id="sentbox">
+    <div class="panel list-panel">
+
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1>Gönderilenler</h1>
+                    <div class="sub" id="sentSub">@messages.Count mesaj</div>
+                </div>
+            </div>
+
+            <div class="list-tools">
+                <div class="list-search" id="listSearchWrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="listSearch" placeholder="Alıcı, konu veya içerik ara" autocomplete="off">
+                    <button class="clear" id="listSearchClear" type="button" aria-label="Temizle"><i class="bi bi-x-circle-fill"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="msg-list" id="msgList">
+            @foreach (var m in messages)
+            {
+                var snippet = Snippet(m.MessageDetail);
+                var search = $"{m.ReceiverEmail} {m.Subject} {snippet}".ToLower(Tr);
+                var detailUrl = Url.Action("SentDetail", "Message", new { id = m.MessageId }) ?? $"/Message/Sent/{m.MessageId}";
+
+                <article class="msg-item"
+                         data-id="@m.MessageId"
+                         data-href="@detailUrl"
+                         data-search="@search"
+                         tabindex="0" title="Mesajı aç">
+                    <div class="lead"></div>
+                    <span class="avatar @AvatarColor(m.ReceiverEmail)">@Initials(m.ReceiverEmail)</span>
+                    <div class="mi-sender">
+                        <span class="sender">Kime: @m.ReceiverEmail</span>
+                    </div>
+                    <div class="mi-main">
+                        <span class="subject">@m.Subject</span>
+                        <span class="snippet">@snippet</span>
+                    </div>
+                    <span class="time" title="@m.SendDate.ToString("d MMMM yyyy, dddd HH:mm", Tr)">@ShortTime(m.SendDate)</span>
+                </article>
+            }
+
+            <div class="empty-list" id="emptySent" @(messages.Any() ? "hidden" : "")>
+                <div class="ic"><i class="bi bi-send"></i></div>
+                <h6>Gönderilmiş mesaj yok</h6>
+                <div>Gönderdiğiniz mesajlar burada listelenecek.</div>
+            </div>
+
+            <div class="empty-list" id="noResults" hidden>
+                <div class="ic"><i class="bi bi-search-heart"></i></div>
+                <h6>Sonuç bulunamadı</h6>
+                <div>Arama kriterini değiştirmeyi deneyin.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const { $, $$ } = window.Mailora;
+            const listEl = $('#msgList');
+            const search = $('#listSearch');
+            const globalSearch = $('#globalSearch');
+            const norm = s => (s || '').toLocaleLowerCase('tr-TR');
+            const rows = () => $$('.msg-item', listEl);
+
+            function setQuery(value, source) {
+                const q = norm(value.trim());
+                if (source !== 'list') search.value = value;
+                if (source !== 'global' && globalSearch) globalSearch.value = value;
+                $('#listSearchWrap').classList.toggle('has-value', !!value);
+
+                let visible = 0;
+                rows().forEach(r => {
+                    const show = !q || r.dataset.search.includes(q);
+                    r.hidden = !show;
+                    if (show) visible++;
+                });
+                $('#noResults').hidden = rows().length === 0 || visible > 0;
+                $('#sentSub').textContent = `${rows().length} mesaj`;
+            }
+
+            search.addEventListener('input', e => setQuery(e.target.value, 'list'));
+            $('#listSearchClear').addEventListener('click', () => { setQuery('', 'clear'); search.focus(); });
+
+            listEl.addEventListener('click', e => {
+                const r = e.target.closest('.msg-item');
+                if (r && r.dataset.href) location.href = r.dataset.href;
+            });
+            listEl.addEventListener('keydown', e => {
+                const r = e.target.closest('.msg-item');
+                if (r && e.key === 'Enter' && r.dataset.href) location.href = r.dataset.href;
+            });
+
+            window.Mailora.onSearch = value => setQuery(value, 'global');
+        })();
+    </script>
 }

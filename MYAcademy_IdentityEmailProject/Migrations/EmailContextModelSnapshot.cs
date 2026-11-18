@@ -130,6 +130,12 @@ namespace MYAcademy_IdentityEmailProject.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("DeletedByReceiver")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DeletedBySender")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsFavourite")
                         .HasColumnType("bit");
 
@@ -139,6 +145,9 @@ namespace MYAcademy_IdentityEmailProject.Migrations
                     b.Property<string>("MessageDetail")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ParentMessageId")
+                        .HasColumnType("int");
 
                     b.Property<string>("ReceiverEmail")
                         .IsRequired()

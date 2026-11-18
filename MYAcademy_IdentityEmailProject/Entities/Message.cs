@@ -12,5 +12,10 @@
         public bool IsFavourite { get; set; }
         public int CategoryId { get; set; }
         public Category Category { get; set; }
+
+        public int? ParentMessageId { get; set; }   // yanıtlanan mesajın id'si, ilk mesajda null
+
+        public bool DeletedBySender { get; set; }
+        public bool DeletedByReceiver { get; set; }
     }
 }
