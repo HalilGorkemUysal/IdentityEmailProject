@@ -1,0 +1,80 @@
+﻿@model List<Message>
+@using System.Globalization
+@using System.Text.RegularExpressions
+@{
+    ViewData["Title"] = "Çöp Kutusu";
+    ViewData["ActiveMenu"] = "trash";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+    var me = ViewBag.UserEmail as string ?? "";
+}
+@functions {
+    static readonly CultureInfo Tr = new("tr-TR");
+
+    static string Initials(string? s) =>
+        string.IsNullOrWhiteSpace(s) ? "?" : s.Trim()[..1].ToUpper(Tr);
+
+    static string Snippet(string? text, int max = 140)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        var t = Regex.Replace(text, @"\s+", " ").Trim();
+        return t.Length > max ? t[..max].TrimEnd() + "…" : t;
+    }
+}
+
+<section class="inbox">
+    <div class="panel list-panel">
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1>Çöp Kutusu</h1>
+                    <div class="sub">@Model.Count mesaj</div>
+                </div>
+                @if (Model.Any())
+                {
+                    <form asp-controller="Message" asp-action="EmptyTrash" method="post"
+                          onsubmit="return confirm('Çöp kutusundaki tüm mesajlar kalıcı olarak silinecek. Emin misiniz?');">
+                        <button type="submit" class="chip" style="color:#dc6478">
+                            <i class="bi bi-trash3"></i> Çöpü Boşalt
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="msg-list">
+            @foreach (var m in Model)
+            {
+                var incoming = m.ReceiverEmail == me;
+                var person = incoming ? m.SenderEmail : m.ReceiverEmail;
+
+                <article class="msg-item" style="cursor:default">
+                    <div class="lead"><i class="bi @(incoming ? "bi-inbox" : "bi-send")" title="@(incoming ? "Alınan" : "Gönderilen")"></i></div>
+                    <span class="avatar av-lav">@Initials(person)</span>
+                    <div class="mi-sender"><span class="sender">@(incoming ? "" : "Kime: ")@person</span></div>
+                    <div class="mi-main">
+                        <span class="subject">@m.Subject</span>
+                        <span class="snippet">@Snippet(m.MessageDetail)</span>
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <form asp-controller="Message" asp-action="RestoreMessage" asp-route-id="@m.MessageId" method="post">
+                            <button type="submit" class="tool-btn" title="Geri al"><i class="bi bi-arrow-counterclockwise"></i></button>
+                        </form>
+                        <form asp-controller="Message" asp-action="PurgeMessage" asp-route-id="@m.MessageId" method="post"
+                              onsubmit="return confirm('Bu mesaj kalıcı olarak silinecek. Emin misiniz?');">
+                            <button type="submit" class="tool-btn" title="Kalıcı olarak sil" style="color:#dc6478"><i class="bi bi-x-lg"></i></button>
+                        </form>
+                    </div>
+                </article>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="empty-list">
+                    <div class="ic"><i class="bi bi-trash3"></i></div>
+                    <h6>Çöp kutusu boş</h6>
+                    <div>Sildiğiniz mesajlar burada görünür.</div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

@@ -1,0 +1,61 @@
+﻿@model List<Message>
+@using System.Globalization
+@using System.Text.RegularExpressions
+@{
+    ViewData["Title"] = "Yıldızlı Mesajlar";
+    ViewData["ActiveMenu"] = "starred";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+}
+@functions {
+    static readonly CultureInfo Tr = new("tr-TR");
+
+    static string Initials(string? s) =>
+        string.IsNullOrWhiteSpace(s) ? "?" : s.Trim()[..1].ToUpper(Tr);
+
+    static string Snippet(string? text, int max = 140)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        var t = Regex.Replace(text, @"\s+", " ").Trim();
+        return t.Length > max ? t[..max].TrimEnd() + "…" : t;
+    }
+}
+
+<section class="inbox">
+    <div class="panel list-panel">
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1>Yıldızlı Mesajlar</h1>
+                    <div class="sub">@Model.Count mesaj</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="msg-list">
+            @foreach (var m in Model)
+            {
+                <article class="msg-item @(m.IsRead ? "" : "unread")"
+                         onclick="location.href='@Url.Action("InboxDetail", "Message", new { id = m.MessageId })'"
+                         tabindex="0" title="Mesajı aç">
+                    <div class="lead"><i class="bi bi-star-fill" style="color:#efb744"></i></div>
+                    <span class="avatar av-lav">@Initials(m.SenderEmail)</span>
+                    <div class="mi-sender"><span class="sender">@m.SenderEmail</span></div>
+                    <div class="mi-main">
+                        <span class="subject">@m.Subject</span>
+                        <span class="snippet">@Snippet(m.MessageDetail)</span>
+                    </div>
+                    <span class="time">@m.SendDate.ToString("d MMM", Tr)</span>
+                </article>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="empty-list">
+                    <div class="ic"><i class="bi bi-star"></i></div>
+                    <h6>Yıldızlı mesajınız yok</h6>
+                    <div>Gelen kutusunda bir mesajı yıldızlayınca burada görünür.</div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

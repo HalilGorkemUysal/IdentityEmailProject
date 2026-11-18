@@ -1,0 +1,101 @@
+﻿@model List<Message>
+@using System.Globalization
+@using System.Text.RegularExpressions
+@{
+    var category = (MYAcademy_IdentityEmailProject.Entities.Category)ViewBag.Category;
+    var box = ViewBag.Box as string ?? "inbox";
+    var isSent = box == "sent";
+
+    ViewData["Title"] = category.CategoryName;
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+}
+@functions {
+    static readonly CultureInfo Tr = new("tr-TR");
+
+    static string Initials(string? s) =>
+        string.IsNullOrWhiteSpace(s) ? "?" : s.Trim()[..1].ToUpper(Tr);
+
+    static string Snippet(string? text, int max = 140)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        var t = Regex.Replace(text, @"\s+", " ").Trim();
+        return t.Length > max ? t[..max].TrimEnd() + "…" : t;
+    }
+
+    static string ShortTime(DateTime d)
+    {
+        var today = DateTime.Today;
+        if (d.Date == today) return d.ToString("HH:mm", Tr);
+        if (d.Date == today.AddDays(-1)) return "Dün";
+        if (d.Year == today.Year) return d.ToString("d MMM", Tr);
+        return d.ToString("dd.MM.yyyy", Tr);
+    }
+}
+
+<section class="inbox" id="categoryList">
+    <div class="panel list-panel">
+
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1><i class="bi bi-tag-fill"></i> @category.CategoryName</h1>
+                    <div class="sub">@Model.Count mesaj</div>
+                </div>
+            </div>
+
+            <div class="list-tools">
+                <div class="filter-chips">
+                    <a class="chip @(!isSent ? "active" : "")"
+                       style="text-decoration:none"
+                       asp-controller="Message" asp-action="Category"
+                       asp-route-id="@category.CategoryId" asp-route-box="inbox">
+                        <i class="bi bi-inbox"></i> Alınan <span class="n">@ViewBag.InboxCount</span>
+                    </a>
+                    <a class="chip @(isSent ? "active" : "")"
+                       style="text-decoration:none"
+                       asp-controller="Message" asp-action="Category"
+                       asp-route-id="@category.CategoryId" asp-route-box="sent">
+                        <i class="bi bi-send"></i> Gönderilen <span class="n">@ViewBag.SentCount</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="msg-list">
+            @foreach (var m in Model)
+            {
+                var person = isSent ? m.ReceiverEmail : m.SenderEmail;
+                var url = isSent
+                    ? Url.Action("SentDetail", "Message", new { id = m.MessageId })
+                    : Url.Action("InboxDetail", "Message", new { id = m.MessageId });
+
+                <article class="msg-item @(!isSent && !m.IsRead ? "unread" : "")"
+                         onclick="location.href='@url'" tabindex="0" title="Mesajı aç">
+                    <div class="lead"></div>
+                    <span class="avatar av-lav">@Initials(person)</span>
+                    <div class="mi-sender">
+                        <span class="sender">@(isSent ? "Kime: " : "")@person</span>
+                        @if (!isSent && !m.IsRead)
+                        {
+                            <span class="unread-dot"></span>
+                        }
+                    </div>
+                    <div class="mi-main">
+                        <span class="subject">@m.Subject</span>
+                        <span class="snippet">@Snippet(m.MessageDetail)</span>
+                    </div>
+                    <span class="time" title="@m.SendDate.ToString("d MMMM yyyy, dddd HH:mm", Tr)">@ShortTime(m.SendDate)</span>
+                </article>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="empty-list">
+                    <div class="ic"><i class="bi @(isSent ? "bi-send" : "bi-inbox")"></i></div>
+                    <h6>@(isSent ? "Bu kategoride gönderilmiş mesaj yok" : "Bu kategoride alınmış mesaj yok")</h6>
+                    <div>Diğer sekmeye göz atabilirsiniz.</div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
