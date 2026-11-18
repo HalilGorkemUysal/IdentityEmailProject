@@ -2,21 +2,821 @@
 
 @{
     Layout = null;
+    ViewData["Title"] = "Giriş Yap - Mailora";
 }
 
-<link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Giriş Yap | Mailora</title>
 
-<div class="container">
-    <br />
-    <br />
-    <form method="post">
-        <label>Kullanıcı Adınız</label>
-        <input type="text" asp-for="Username" class="form-control"/>
-        <br />
-        <label>Şifreniz</label>
-        <input type="password" asp-for="Password" class="form-control" />
-        <br />
-        <button class="btn btn-primary">Giriş Yap</button>
-    </form>
-</div>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
 
+    <style>
+        :root {
+            --primary: #8174df;
+            --primary-dark: #6859cb;
+            --text: #30334d;
+            --muted: #898fa8;
+            --border: #e7e8f5;
+            --input-bg: #f8f9fe;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient( 125deg, #f0edff 0%, #fafbff 48%, #eaf3ff 100% );
+            color: var(--text);
+        }
+
+        .auth-page {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 45px 20px;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 1150px;
+            min-height: 680px;
+            display: grid;
+            grid-template-columns: 48% 52%;
+            background: #fff;
+            border-radius: 34px;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(68, 61, 131, .12);
+        }
+
+        /* SOL MARKA ALANI */
+
+        .brand-side {
+            position: relative;
+            padding: 48px 45px;
+            background: linear-gradient( 155deg, #eae8ff, #e7ecff 58%, #e2f6fa );
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+            .brand-side::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background-image: radial-gradient( rgba(255,255,255,.95) 1.7px, transparent 1.7px );
+                background-size: 27px 27px;
+                opacity: .8;
+                pointer-events: none;
+            }
+
+            .brand-side > * {
+                position: relative;
+                z-index: 1;
+            }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .logo-icon {
+            width: 49px;
+            height: 49px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #a39af0, #7063ce);
+            color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 9px 20px rgba(103, 84, 205, .23);
+            font-size: 25px;
+        }
+
+        .brand-logo .accent {
+            color: #8274df;
+        }
+
+        .brand-content {
+            margin-top: 76px;
+        }
+
+        .brand-pill {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 17px;
+            border-radius: 30px;
+            color: #7867d7;
+            background: rgba(255,255,255,.8);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .brand-content h1 {
+            margin-top: 22px;
+            font-size: clamp(29px, 3vw, 39px);
+            letter-spacing: -1.6px;
+            line-height: 1.17;
+            font-weight: 800;
+        }
+
+            .brand-content h1 span {
+                color: #8b7cdd;
+            }
+
+        .brand-content p {
+            margin-top: 18px;
+            color: #777d98;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* ZARF İLLÜSTRASYONU */
+
+        .mail-illustration {
+            position: relative;
+            width: 290px;
+            height: 205px;
+            margin: 43px auto 20px;
+        }
+
+        .mail-paper {
+            position: absolute;
+            width: 150px;
+            height: 117px;
+            top: 7px;
+            left: 70px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(95, 84, 155, .12);
+            transform: rotate(-4deg);
+            padding: 20px;
+        }
+
+            .mail-paper span {
+                display: block;
+                height: 8px;
+                border-radius: 5px;
+                margin-bottom: 12px;
+                background: #e9e5fa;
+            }
+
+                .mail-paper span:first-child {
+                    width: 55%;
+                    background: #d6cdf8;
+                }
+
+        .mail-envelope {
+            position: absolute;
+            bottom: 0;
+            left: 45px;
+            width: 200px;
+            height: 120px;
+            background: linear-gradient(135deg, #a89af0, #8174d5);
+            border-radius: 14px 14px 20px 20px;
+            box-shadow: 0 20px 35px rgba(99, 78, 183, .19);
+            overflow: hidden;
+        }
+
+            .mail-envelope::after {
+                content: "";
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                border-left: 100px solid transparent;
+                border-right: 100px solid transparent;
+                border-bottom: 68px solid #8c7fdb;
+            }
+
+        .floating-check {
+            position: absolute;
+            top: 45px;
+            right: -4px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            background: white;
+            border-radius: 15px;
+            padding: 12px 15px;
+            box-shadow: 0 10px 30px rgba(90, 85, 150, .10);
+            font-size: 12px;
+            font-weight: 700;
+            color: #68718f;
+        }
+
+            .floating-check i {
+                color: #48b99c;
+                font-size: 22px;
+            }
+
+        .brand-bottom {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-top: 30px;
+        }
+
+        .brand-feature {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .feature-icon {
+            width: 39px;
+            height: 39px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: rgba(255,255,255,.8);
+            color: #8275df;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .brand-feature strong {
+            display: block;
+            font-size: 13px;
+        }
+
+        .brand-feature small {
+            color: #8389a1;
+            font-size: 12px;
+        }
+
+        /* SAĞ FORM ALANI */
+
+        .form-side {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 55px 62px;
+        }
+
+        .login-content {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .form-header h2 {
+            font-size: 35px;
+            font-weight: 800;
+            letter-spacing: -1.3px;
+        }
+
+        .form-header p {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .login-form {
+            margin-top: 38px;
+        }
+
+        .field {
+            margin-bottom: 25px;
+        }
+
+            .field label {
+                display: block;
+                margin-bottom: 11px;
+                font-size: 14px;
+                font-weight: 700;
+                color: #555a73;
+            }
+
+        .required {
+            color: #e17ba2;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            color: #a2a6be;
+            font-size: 19px;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 56px;
+            padding: 0 50px;
+            font-family: inherit;
+            font-size: 14px;
+            background: var(--input-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 15px;
+            outline: none;
+            color: var(--text);
+            transition: .2s ease;
+        }
+
+            .form-input::placeholder {
+                color: #a6abc0;
+            }
+
+            .form-input:focus {
+                background: white;
+                border-color: #988be8;
+                box-shadow: 0 0 0 4px rgba(129,116,223,.10);
+            }
+
+        .eye-btn {
+            position: absolute;
+            right: 17px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #9399b0;
+            font-size: 19px;
+            padding: 5px;
+        }
+
+            .eye-btn:hover {
+                color: var(--primary);
+            }
+
+        .forgot-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: -9px;
+            margin-bottom: 27px;
+        }
+
+        .forgot-link {
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+            .forgot-link:hover {
+                color: var(--primary-dark);
+                text-decoration: underline;
+            }
+
+        .login-btn {
+            width: 100%;
+            height: 56px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            border: none;
+            border-radius: 15px;
+            background: linear-gradient(100deg, #9184e9, #7163d3);
+            color: white;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 12px 25px rgba(113,99,211,.23);
+            transition: .2s ease;
+        }
+
+            .login-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 16px 30px rgba(113,99,211,.30);
+            }
+
+            .login-btn:disabled {
+                opacity: .7;
+                cursor: wait;
+            }
+
+        .secure-note {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 21px;
+            color: #959ab0;
+            font-size: 12px;
+        }
+
+            .secure-note i {
+                color: #4dbb9e;
+                font-size: 16px;
+            }
+
+        .register-section {
+            margin-top: 34px;
+            padding-top: 27px;
+            border-top: 1px solid #ececf5;
+            text-align: center;
+        }
+
+            .register-section p {
+                color: #8489a1;
+                font-size: 14px;
+                margin-bottom: 15px;
+            }
+
+        .register-btn {
+            width: 100%;
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            text-decoration: none;
+            color: #7669d4;
+            background: #f6f4ff;
+            border: 1.5px solid #e5e0ff;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            transition: .2s;
+        }
+
+            .register-btn:hover {
+                background: #eae6ff;
+                border-color: #a99af2;
+                color: #6152c4;
+            }
+
+        .validation-summary,
+        .field-error {
+            color: #d94b70;
+            font-size: 12px;
+        }
+
+            .validation-summary ul {
+                margin: 0 0 18px;
+                padding-left: 18px;
+            }
+
+        .field-error {
+            display: block;
+            margin-top: 7px;
+        }
+
+        /* RESPONSIVE */
+
+        @@media(max-width: 960px) {
+            .auth-card {
+                grid-template-columns: 42% 58%;
+            }
+
+            .brand-side {
+                padding: 38px 28px;
+            }
+
+            .form-side {
+                padding: 40px 35px;
+            }
+
+            .brand-content {
+                margin-top: 55px;
+            }
+
+            .floating-check {
+                right: -10px;
+            }
+        }
+
+        @@media(max-width: 720px) {
+            .auth-page {
+                padding: 18px 12px;
+            }
+
+            .auth-card {
+                grid-template-columns: 1fr;
+                border-radius: 24px;
+            }
+
+            .brand-side {
+                min-height: auto;
+                padding: 25px;
+            }
+
+            .brand-content {
+                margin-top: 24px;
+            }
+
+                .brand-content h1 {
+                    font-size: 26px;
+                }
+
+            .mail-illustration,
+            .brand-bottom {
+                display: none;
+            }
+
+            .form-side {
+                padding: 35px 25px 42px;
+            }
+
+            .form-header h2 {
+                font-size: 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="auth-page">
+        <div class="auth-card">
+
+            <!-- SOL MARKA PANELİ -->
+            <aside class="brand-side">
+
+                <div class="brand-logo">
+                    <span class="logo-icon">
+                        <i class="bi bi-envelope-paper-heart"></i>
+                    </span>
+
+                    <span>
+                        Mail<span class="accent">ora</span>
+                    </span>
+                </div>
+
+                <div class="brand-content">
+
+                    <div class="brand-pill">
+                        <i class="bi bi-stars"></i>
+                        Yenilikçi e-posta deneyimi
+                    </div>
+
+                    <h1>
+                        Yeniden <span>hoş geldiniz!</span>
+                        <br />
+                        Gelen kutunuz sizi bekliyor.
+                    </h1>
+
+                    <p>
+                        Mailora ile mesajlarınızı tek yerden
+                        yönetin. Önemli olanları kaçırmayın
+                        ve kaldığınız yerden devam edin.
+                    </p>
+                </div>
+
+                <div class="mail-illustration"
+                     aria-hidden="true">
+
+                    <div class="mail-paper">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+
+                    <div class="mail-envelope"></div>
+
+                    <div class="floating-check">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>Gelen kutunuz hazır!</span>
+                    </div>
+                </div>
+
+                <div class="brand-bottom">
+
+                    <div class="brand-feature">
+                        <div class="feature-icon">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <div>
+                            <strong>Akıllı gelen kutusu</strong>
+                            <small>Mesajlarınız düzenli ve güvende.</small>
+                        </div>
+                    </div>
+
+                    <div class="brand-feature">
+                        <div class="feature-icon">
+                            <i class="bi bi-lightning-charge"></i>
+                        </div>
+                        <div>
+                            <strong>Hızlı ve kolay kullanım</strong>
+                            <small>E-postalarınıza anında erişin.</small>
+                        </div>
+                    </div>
+
+                    <div class="brand-feature">
+                        <div class="feature-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div>
+                            <strong>Güvenli hesap</strong>
+                            <small>Gizliliğiniz bizim için önemli.</small>
+                        </div>
+                    </div>
+
+                </div>
+            </aside>
+
+            <!-- SAĞ GİRİŞ FORMU -->
+            <section class="form-side">
+
+                <div class="login-content">
+
+                    <div class="form-header">
+                        <h2>Giriş Yap</h2>
+                        <p>
+                            Mailora hesabınıza giriş yapın
+                            ve mesajlarınıza ulaşın.
+                        </p>
+                    </div>
+
+                    <form asp-controller="Login"
+                          asp-action="SignIn"
+                          method="post"
+                          asp-route-returnUrl ="@ViewBag.ReturnUrl"
+                          class="login-form"
+                          id="loginForm">
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="validation-summary"
+                             role="alert"></div>
+
+                        <!-- KULLANICI ADI -->
+                        <div class="field">
+
+                            <label asp-for="Username">
+                                Kullanıcı Adı
+                                <span class="required">*</span>
+                            </label>
+
+                            <div class="input-wrap">
+
+                                <i class="bi bi-person input-icon"></i>
+
+                                <input asp-for="Username"
+                                       type="text"
+                                       class="form-input"
+                                       placeholder="Kullanıcı adınız"
+                                       autocomplete="username"
+                                       maxlength="30"
+                                       required />
+
+                            </div>
+
+                            <span asp-validation-for="Username"
+                                  class="field-error"></span>
+                        </div>
+
+                        <!-- ŞİFRE -->
+                        <div class="field">
+
+                            <label asp-for="Password">
+                                Şifre
+                                <span class="required">*</span>
+                            </label>
+
+                            <div class="input-wrap">
+
+                                <i class="bi bi-lock input-icon"></i>
+
+                                <input asp-for="Password"
+                                       type="password"
+                                       class="form-input"
+                                       placeholder="Şifrenizi girin"
+                                       autocomplete="current-password"
+                                       required />
+
+                                <button type="button"
+                                        class="eye-btn"
+                                        id="togglePassword"
+                                        aria-label="Şifreyi göster"
+                                        aria-pressed="false">
+
+                                    <i class="bi bi-eye"></i>
+
+                                </button>
+                            </div>
+
+                            <span asp-validation-for="Password"
+                                  class="field-error"></span>
+                        </div>
+
+                        <!-- ŞİFREMİ UNUTTUM -->
+                        <div class="forgot-row">
+
+                            <a href="/PasswordChange/ForgetPassword/"
+                               class="forgot-link">
+
+                                Şifreni mi unuttun?
+
+                            </a>
+                        </div>
+
+                        <!-- GİRİŞ -->
+                        <button type="submit"
+                                class="login-btn"
+                                id="loginBtn">
+
+                            <span>Giriş Yap</span>
+                            <i class="bi bi-arrow-right"></i>
+
+                        </button>
+
+                        <div class="secure-note">
+                            <i class="bi bi-shield-check"></i>
+                            Güvenli giriş deneyimi
+                        </div>
+
+                    </form>
+
+                    <!-- YENİ HESAP -->
+                    <div class="register-section">
+
+                        <p>Henüz Mailora hesabınız yok mu?</p>
+
+                        <a asp-controller="Register"
+                           asp-action="SignUp"
+                           class="register-btn">
+
+                            <i class="bi bi-person-plus"></i>
+                            Yeni Hesap Oluştur
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            const password = document.getElementById("Password");
+            const toggleBtn = document.getElementById("togglePassword");
+
+            if (password && toggleBtn) {
+                toggleBtn.addEventListener("click", function() {
+
+                    const isHidden = password.type === "password";
+
+                    password.type = isHidden ? "text" : "password";
+
+                    toggleBtn.innerHTML = isHidden
+                        ? '<i class="bi bi-eye-slash"></i>'
+                        : '<i class="bi bi-eye"></i>';
+
+                    toggleBtn.setAttribute(
+                        "aria-label",
+                        isHidden ? "Şifreyi gizle" : "Şifreyi göster"
+                    );
+
+                    toggleBtn.setAttribute(
+                        "aria-pressed",
+                        String(isHidden)
+                    );
+
+                });
+            }
+
+            const loginForm = document.getElementById("loginForm");
+            const loginBtn = document.getElementById("loginBtn");
+
+            if (loginForm && loginBtn) {
+                loginForm.addEventListener("submit", function(event) {
+
+                    if (!loginForm.checkValidity()) {
+                        return;
+                    }
+
+                    // MVC doğrulama veya başka JavaScript
+                    // submit işlemini iptal etmişse kilitleme.
+                    setTimeout(function() {
+                        if (event.defaultPrevented) return;
+
+                        loginBtn.disabled = true;
+                        loginBtn.innerHTML =
+                            '<i class="bi bi-arrow-repeat"></i> Giriş Yapılıyor...';
+                    }, 0);
+
+                });
+            }
+
+        });
+    </script>
+
+</body>
+</html>

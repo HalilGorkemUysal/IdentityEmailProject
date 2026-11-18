@@ -7,6 +7,7 @@ using MYAcademy_IdentityEmailProject.Entities;
 
 namespace MYAcademy_IdentityEmailProject.Controllers
 {
+    [Authorize]
     public class MessageController : Controller
     {
         private readonly EmailContext _context;
@@ -18,9 +19,11 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             _userManager = userManager;
         }
 
-        public IActionResult Inbox()
+        public async Task<IActionResult> Inbox()
         {
-            var values = _context.Messages.ToList();
+            var userId = _userManager.GetUserId(User);
+            var relatedUser = await _userManager.FindByIdAsync(userId);
+            var values = _context.Messages.Where(x => x.ReceiverEmail == relatedUser.Email).ToList();
             return View(values);
         }
 
@@ -37,7 +40,6 @@ namespace MYAcademy_IdentityEmailProject.Controllers
         }
 
 
-        [Authorize]
         public async Task<IActionResult> SendBox()
         {
             var user = await _userManager.GetUserAsync(User);

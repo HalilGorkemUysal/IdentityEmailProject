@@ -14,20 +14,29 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             _signInManager = signInManager;
         }
 
-        public IActionResult SignIn()
-        {
+        [HttpGet]
+        public IActionResult SignIn(string? returnUrl)
+        { 
+            ViewBag.ReturnUrl = returnUrl;
+
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> SignIn(UserLoginViewModel userLoginViewModel)
+        public async Task<IActionResult> SignIn(UserLoginViewModel userLoginViewModel,string? returnUrl)
         {
             var result = await _signInManager.PasswordSignInAsync(userLoginViewModel.Username, userLoginViewModel.Password, false, false);
+
             if (result.Succeeded)
-            {
+            {             
+                if (!string.IsNullOrEmpty(returnUrl))
+                {
+                    return LocalRedirect(returnUrl);
+                }
                 return RedirectToAction("Inbox", "Message");
             }
 
+            ViewBag.ReturnUrl = returnUrl;
             return View();
         }
     }
