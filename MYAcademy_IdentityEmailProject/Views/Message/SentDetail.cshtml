@@ -451,8 +451,8 @@
     <article class="md-card">
 
         <!-- ÜST ARAÇ ÇUBUĞU -->
+                <!-- ÜST ARAÇ ÇUBUĞU -->
         <div class="md-toolbar">
-
             <div class="md-toolbar-left">
 
                 <a asp-controller="Message"
@@ -464,7 +464,6 @@
 
                 <span class="md-divider"></span>
 
-                <!-- SİL -->
                 <button type="button"
                         class="md-icon-btn danger"
                         title="Mesajı sil"
@@ -473,47 +472,10 @@
                     <i class="bi bi-trash3"></i>
                 </button>
 
-                <!-- OKUNMADI İŞARETLE -->
-                <form asp-controller="Message"
-                      asp-action="MarkAsUnread"
-                      asp-route-id="@Model.MessageId"
-                      method="post">
-
-                    @Html.AntiForgeryToken()
-
-                    <button type="submit"
-                            class="md-icon-btn @(Model.IsFavourite ? "starred" : "")"
-                            title="@(Model.IsFavourite ? "Yıldızı kaldır" : "Yıldız ekle")"
-                            aria-label="@(Model.IsFavourite ? "Yıldızı kaldır" : "Yıldız ekle")">
-
-                        <i class="bi @(Model.IsFavourite ? "bi-star-fill" : "bi-star")"></i>
-                    </button>
-                </form>
-
-            </div>
-
-            <div class="md-toolbar-right">
-
-                <!-- YILDIZ -->
-                <form asp-controller="Message"
-                      asp-action="ToggleStar"
-                      asp-route-id="@Model.MessageId"
-                      method="post">
-
-                    @Html.AntiForgeryToken()
-
-                    <button type="submit"
-                            class="md-icon-btn @@(Model.IsFavourite ? " starred" : "" )"
-                            title="@@(Model.IsFavourite ? " Yıldızı kaldır" : "Yıldız ekle" )"
-                            aria-label="@@(Model.IsFavourite ? " Yıldızı kaldır" : "Yıldız ekle" )">
-
-                        <i class="bi @@(Model.IsFavourite ? " bi-star-fill" : "bi-star" )"></i>
-                    </button>
-                </form>
-
             </div>
         </div>
 
+        <!-- MESAJ İÇERİĞİ -->
         <!-- MESAJ İÇERİĞİ -->
         <div class="md-body">
 
@@ -556,30 +518,6 @@
             <!-- ALT İŞLEMLER -->
             <div class="md-actions">
 
-                <!-- YILDIZ -->
-                <form asp-controller="Message"
-                      asp-action="ToggleStar"
-                      asp-route-id="@Model.MessageId"
-                      method="post">
-
-                    @Html.AntiForgeryToken()
-
-                    <button type="submit" class="md-btn">
-
-                        @if (Model.IsFavourite)
-                        {
-                            <i class="bi bi-star-fill"></i>
-                            <span>Yıldızı Kaldır</span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-star"></i>
-                            <span>Yıldız Ekle</span>
-                        }
-
-                    </button>
-                </form>
-
                 <!-- SİL -->
                 <button type="button"
                         class="md-btn danger"
@@ -605,8 +543,8 @@
                             <div class="md-thread-head">
                                 <span class="md-thread-avatar">@(string.IsNullOrEmpty(t.SenderEmail) ? "?" : t.SenderEmail[..1].ToUpperInvariant())</span>
                                 <div class="md-thread-meta">
-                                    <strong>Kime: @Model.ReceiverEmail</strong>
-                                    <small>Gönderen: @Model.SenderEmail (Ben)</small>
+                                    <strong>@t.SenderEmail</strong>
+                                    <small>Alıcı: @t.ReceiverEmail</small>
                                 </div>
                                 <span class="md-thread-date">@t.SendDate.ToString("dd MMMM yyyy HH:mm", tr)</span>
                             </div>

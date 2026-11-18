@@ -1,8 +1,8 @@
-﻿<!-- =====================================================================
-       SHARED SIDEBAR
-       ASP.NET Core MVC: Views/Shared/_Sidebar.cshtml (partial) — _Layout.cshtml içinde
-       Menü linkleri ileride asp-controller / asp-action ile değiştirilecek.
-       ===================================================================== -->
+﻿@model List<Category>
+@{
+    var palette = new[] { "#8B7FD6", "#5CC09A", "#EBA27A", "#4A7CC2", "#C2476B", "#B88A12", "#3E9A77", "#E07597", "#5A4FB0", "#C8774A" };
+}
+
 <aside class="app-sidebar" id="appSidebar" aria-label="Ana menü">
     <a class="brand" data-page="inbox" href="#inbox">
         <div class="brand-logo"><i class="bi bi-envelope-paper-heart-fill"></i></div>
@@ -30,11 +30,18 @@
     </ul>
 
     <div class="nav-section-title">Etiketler</div>
-    <ul class="side-labels">
-        <li><a data-label="İş" data-tip="İş"><span class="dot" style="background:#8B7FD6"></span> <span class="lbl">İş</span></a></li>
-        <li><a data-label="Kişisel" data-tip="Kişisel"><span class="dot" style="background:#5CC09A"></span> <span class="lbl">Kişisel</span></a></li>
-        <li><a data-label="Fatura" data-tip="Fatura"><span class="dot" style="background:#EBA27A"></span> <span class="lbl">Fatura</span></a></li>
-    </ul>
+        <ul class="side-labels">
+            @for (var i = 0; i < Model.Count; i++)
+            {
+                var c = Model[i];
+                <li>
+                    <a href="#" data-label="@c.CategoryName" data-tip="@c.CategoryName">
+                        <span class="dot" style="background:@palette[i % palette.Length]"></span>
+                        <span class="lbl">@c.CategoryName</span>
+                    </a>
+                </li>
+    }
+</ul>
 
     <div class="storage-card" data-tip="Depolama · 9,3 / 15 GB">
         <div class="top">

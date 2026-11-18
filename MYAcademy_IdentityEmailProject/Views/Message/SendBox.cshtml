@@ -55,12 +55,17 @@
 
             <div class="list-tools">
                 <div class="list-search" id="listSearchWrap">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="listSearch" placeholder="Alıcı, konu veya içerik ara" autocomplete="off">
-                    <button class="clear" id="listSearchClear" type="button" aria-label="Temizle"><i class="bi bi-x-circle-fill"></i></button>
-                </div>
+                <i class="bi bi-search"></i>
+                <input type="text" id="listSearch" placeholder="Alıcı, konu veya içerik ara" autocomplete="off">
+                <button class="clear" id="listSearchClear" type="button" aria-label="Temizle"><i class="bi bi-x-circle-fill"></i></button>
+            </div>
+            <div class="filter-chips">
+                <button type="button" class="chip" id="sortBtn" title="Sıralama: Yeni → Eski">
+                <i class="bi bi-sort-down"></i> Tarih
+                </button>
             </div>
         </div>
+    </div>
 
         <div class="msg-list" id="msgList">
             @foreach (var m in messages)
@@ -71,6 +76,7 @@
 
                 <article class="msg-item"
                          data-id="@m.MessageId"
+                         data-date="@m.SendDate.ToString("yyyyMMddHHmmss")"
                          data-href="@detailUrl"
                          data-search="@search"
                          tabindex="0" title="Mesajı aç">
@@ -112,6 +118,22 @@
             const norm = s => (s || '').toLocaleLowerCase('tr-TR');
             const rows = () => $$('.msg-item', listEl);
 
+            let sortDir = 'desc';
+
+                function applySort() {
+                        rows()
+                            .sort((a, b) => sortDir === 'asc' ? a.dataset.date - b.dataset.date : b.dataset.date - a.dataset.date)
+                            .forEach(r => listEl.insertBefore(r, $('#emptySent')));
+                                }
+
+                $('#sortBtn').addEventListener('click', e => {
+                    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+                    const btn = e.currentTarget;
+                    btn.title = sortDir === 'desc' ? 'Sıralama: Yeni → Eski' : 'Sıralama: Eski → Yeni';
+                    $('i', btn).className = `bi ${sortDir === 'desc' ? 'bi-sort-down' : 'bi-sort-up'}`;
+                    applySort();
+                    });
+
             function setQuery(value, source) {
                 const q = norm(value.trim());
                 if (source !== 'list') search.value = value;
@@ -141,6 +163,7 @@
             });
 
             window.Mailora.onSearch = value => setQuery(value, 'global');
+            applySort();
         })();
     </script>
 }

@@ -1,0 +1,83 @@
+﻿@model List<Message>
+@using System.Globalization
+@using System.Text.RegularExpressions
+@{
+    ViewData["Title"] = "Arama Sonuçları";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var q = ViewBag.Query as string ?? "";
+    var userEmail = ViewBag.UserEmail as string ?? "";
+}
+@functions {
+    static readonly CultureInfo Tr = new("tr-TR");
+
+    static string Snippet(string? text, int max = 140)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        var t = Regex.Replace(text, @"\s+", " ").Trim();
+        return t.Length > max ? t[..max].TrimEnd() + "…" : t;
+    }
+
+    static string Initials(string? s) =>
+        string.IsNullOrWhiteSpace(s) ? "?" : s.Trim()[..1].ToUpper(Tr);
+}
+
+<section class="inbox" id="searchResults">
+    <div class="panel list-panel">
+
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1>Arama Sonuçları</h1>
+                    <div class="sub">
+                        @if (string.IsNullOrEmpty(q))
+                        {
+                            <text>Aramak için üstteki kutuya yazıp Enter'a basın</text>
+                        }
+                        else
+                        {
+                            <text>“@q” için @Model.Count sonuç</text>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="msg-list">
+            @foreach (var m in Model)
+            {
+                var incoming = m.ReceiverEmail == userEmail;   // kendine atılan mesaj gelen sayılır
+                var person = incoming ? m.SenderEmail : m.ReceiverEmail;
+                var url = incoming
+                    ? Url.Action("InboxDetail", "Message", new { id = m.MessageId })
+                    : Url.Action("SentDetail", "Message", new { id = m.MessageId });
+
+                <article class="msg-item @(incoming && !m.IsRead ? "unread" : "")"
+                         onclick="location.href='@url'" tabindex="0" title="Mesajı aç">
+                    <div class="lead"></div>
+                    <span class="avatar av-lav">@Initials(person)</span>
+                    <div class="mi-sender">
+                        <span class="sender">@(incoming ? "" : "Kime: ")@person</span>
+                    </div>
+                    <div class="mi-main">
+                        <span class="subject">@m.Subject</span>
+                        <span class="snippet">@Snippet(m.MessageDetail)</span>
+                    </div>
+                    <span class="time">
+                        <i class="bi @(incoming ? "bi-inbox" : "bi-send")"></i>
+                        @m.SendDate.ToString("dd.MM.yyyy HH:mm", Tr)
+                    </span>
+                </article>
+            }
+
+            @if (!Model.Any() && !string.IsNullOrEmpty(q))
+            {
+                <div class="empty-list">
+                    <div class="ic"><i class="bi bi-search-heart"></i></div>
+                    <h6>Sonuç bulunamadı</h6>
+                    <div>Farklı bir kelime ile tekrar deneyin.</div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

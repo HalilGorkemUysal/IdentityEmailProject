@@ -29,6 +29,7 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             // Inbox
             var values = await _context.Messages
                 .AsNoTracking()
+                .Include(x=> x.Category)
                 .Where(x => x.ReceiverEmail == relatedUser.Email && !x.DeletedByReceiver)
                 .ToListAsync();
 
@@ -170,24 +171,20 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             var user = await _userManager.GetUserAsync(User);
 
             var message = await _context.Messages
-            .FirstOrDefaultAsync(x => x.MessageId == id &&
-                              ((x.ReceiverEmail == user.Email && !x.DeletedByReceiver) ||
-                               (x.SenderEmail == user.Email && !x.DeletedBySender)));
+                .FirstOrDefaultAsync(x => x.MessageId == id &&
+                              x.ReceiverEmail == user.Email &&
+                              !x.DeletedByReceiver);
 
             if (message == null)
                 return NotFound();
 
-            // Liste sayfası starred değerini gönderir, detay sayfası göndermez (o zaman tersine çevir)
             message.IsFavourite = starred ?? !message.IsFavourite;
             await _context.SaveChangesAsync();
 
-            // Liste sayfasındaki fetch isteği ise sadece OK dön
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Ok();
 
-            return message.ReceiverEmail == user.Email
-                ? RedirectToAction(nameof(InboxDetail), new { id })
-                : RedirectToAction(nameof(SentDetail), new { id });
+            return RedirectToAction(nameof(InboxDetail), new { id });
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -236,6 +233,33 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             return isReceiver && !isSender
                 ? RedirectToAction(nameof(Inbox))
                 : RedirectToAction(nameof(SendBox));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Search(string? q)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            q = q?.Trim();
+            ViewBag.Query = q;
+            ViewBag.UserEmail = user.Email;
+
+            if (string.IsNullOrEmpty(q))
+                return View(new List<Message>());
+
+            var results = await _context.Messages
+                .AsNoTracking()
+                .Where(x => (x.ReceiverEmail == user.Email && !x.DeletedByReceiver) ||
+                            (x.SenderEmail == user.Email && !x.DeletedBySender))
+                .Where(x => x.Subject.Contains(q) ||
+                            x.MessageDetail.Contains(q) ||
+                            x.SenderEmail.Contains(q) ||
+                            x.ReceiverEmail.Contains(q))
+                .OrderByDescending(x => x.SendDate)
+                .Take(200)
+                .ToListAsync();
+
+            return View(results);
         }
 
         // Verilen mesajdan başlayıp yukarı doğru zinciri toplar (en yeni → en eski)

@@ -453,67 +453,58 @@
         <!-- ÜST ARAÇ ÇUBUĞU -->
         <div class="md-toolbar">
 
-            <div class="md-toolbar-left">
+    <div class="md-toolbar-left">
 
-                <a asp-controller="Message"
-                   asp-action="Inbox"
-                   class="md-icon-btn"
-                   title="Gelen kutusuna dön"
-                   aria-label="Gelen kutusuna dön">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
+        <a asp-controller="Message"
+           asp-action="Inbox"
+           class="md-icon-btn"
+           title="Gelen kutusuna dön"
+           aria-label="Gelen kutusuna dön">
+            <i class="bi bi-arrow-left"></i>
+        </a>
 
-                <span class="md-divider"></span>
+        <span class="md-divider"></span>
 
-                <!-- SİL -->
-                <button type="button"
-                        class="md-icon-btn danger"
-                        title="Mesajı sil"
-                        aria-label="Mesajı sil"
-                        onclick="openDeleteModal()">
-                    <i class="bi bi-trash3"></i>
-                </button>
+        <!-- SİL -->
+        <button type="button"
+                class="md-icon-btn danger"
+                title="Mesajı sil"
+                aria-label="Mesajı sil"
+                onclick="openDeleteModal()">
+            <i class="bi bi-trash3"></i>
+        </button>
 
-                <!-- OKUNMADI İŞARETLE -->
-                <form asp-controller="Message"
-                      asp-action="MarkAsUnread"
-                      asp-route-id="@Model.MessageId"
-                      method="post">
+        <!-- OKUNMADI İŞARETLE -->
+        <form asp-controller="Message"
+              asp-action="MarkAsUnread"
+              asp-route-id="@Model.MessageId"
+              method="post">
 
-                    @Html.AntiForgeryToken()
+            <button type="submit"
+                    class="md-icon-btn"
+                    title="Okunmadı olarak işaretle"
+                    aria-label="Okunmadı olarak işaretle">
+                <i class="bi bi-envelope"></i>
+            </button>
+        </form>
 
-                    <button type="submit"
-                            class="md-icon-btn @(Model.IsFavourite ? "starred" : "")"
-                            title="@(Model.IsFavourite ? "Yıldızı kaldır" : "Yıldız ekle")"
-                            aria-label="@(Model.IsFavourite ? "Yıldızı kaldır" : "Yıldız ekle")">
+        <!-- YILDIZ -->
+        <form asp-controller="Message"
+              asp-action="ToggleStar"
+              asp-route-id="@Model.MessageId"
+              method="post">
 
-                        <i class="bi @(Model.IsFavourite ? "bi-star-fill" : "bi-star")"></i>
-                    </button>
-                </form>
+            <button type="submit"
+                    class="md-icon-btn @(Model.IsFavourite ? "starred" : "")"
+                    title="@(Model.IsFavourite ? "Yıldızı kaldır" : "Yıldız ekle")"
+                    aria-label="@(Model.IsFavourite ? "Yıldızı kaldır" : "Yıldız ekle")">
+                <i class="bi @(Model.IsFavourite ? "bi-star-fill" : "bi-star")"></i>
+            </button>
+        </form>
 
-            </div>
+    </div>
 
-            <div class="md-toolbar-right">
-
-                <!-- YILDIZ -->
-                <form asp-controller="Message"
-                      asp-action="ToggleStar"
-                      asp-route-id="@Model.MessageId"
-                      method="post">
-
-                    @Html.AntiForgeryToken()
-
-                    <button type="submit"
-                            class="md-icon-btn @@(Model.IsFavourite ? " starred" : "" )"
-                            title="@@(Model.IsFavourite ? " Yıldızı kaldır" : "Yıldız ekle" )"
-                            aria-label="@@(Model.IsFavourite ? " Yıldızı kaldır" : "Yıldız ekle" )">
-
-                        <i class="bi @@(Model.IsFavourite ? " bi-star-fill" : "bi-star" )"></i>
-                    </button>
-                </form>
-
-            </div>
-        </div>
+</div>
 
         <!-- MESAJ İÇERİĞİ -->
         <div class="md-body">

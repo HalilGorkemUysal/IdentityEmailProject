@@ -95,6 +95,7 @@
             <button type="button" class="tool-btn" id="bulkRead" title="Okundu olarak işaretle" disabled><i class="bi bi-envelope-open"></i></button>
             <button type="button" class="tool-btn" id="bulkUnread" title="Okunmadı olarak işaretle" disabled><i class="bi bi-envelope"></i></button>
             <button type="button" class="tool-btn" id="bulkDelete" title="Sil" disabled><i class="bi bi-trash3"></i></button>
+            <button type="button" class="tool-btn" id="sortBtn" title="Sıralama: Yeni → Eski"><i class="bi bi-sort-down"></i></button>
             <button type="button" class="tool-btn" id="refreshBtn" title="Yenile"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
 
@@ -103,24 +104,24 @@
             @foreach (var m in messages)
             {
                 var snippet = Snippet(m.MessageDetail);
-                var search = $"{m.SenderEmail} {m.SenderEmail} {m.Subject} {snippet}".ToLower(Tr);
+                var search = $"{m.SenderEmail} {m.Subject} {snippet}".ToLower(Tr);
                 var detailUrl = Url.Action("InboxDetail", "Message", new { id = m.MessageId }) ?? $"/Message/Inbox/{m.MessageId}";
 
                 <article class="msg-item @(m.IsRead ? "" : "unread")"
-                         data-id="@m.MessageId"
-                         data-href="@detailUrl"
-                         data-unread="@(m.IsRead ? "0" : "1")"
-                    @*    data-starred="@(m.IsStarred ? "1" : "0")"
-                         data-attach="@(m.AttachmentCount > 0 ? "1" : "0")"
-                         data-tag="@m.Label" *@
-                         data-search="@search"
-                         tabindex="0" title="Mesajı aç">
-                    <div class="lead">
-                        <input type="checkbox" class="m-check row-check" aria-label="Seç">
-                        @*    <button class="star-btn @(m.IsStarred ? "on" : "")" type="button" aria-label="Yıldızla">
-                            <i class="bi @(m.IsStarred ? "bi-star-fill" : "bi-star")"></i>
-                        </button> *@
-                    </div>
+                        data-id="@m.MessageId"
+                        data-href="@detailUrl"
+                        data-unread="@(m.IsRead ? "0" : "1")"
+                        data-starred="@(m.IsFavourite ? "1" : "0")"
+                        data-tag="@m.Category?.CategoryName"
+                        data-search="@search"
+                        data-date="@m.SendDate.ToString("yyyyMMddHHmmss")"
+                        tabindex="0" title="Mesajı aç">
+                   <div class="lead">
+                    <input type="checkbox" class="m-check row-check" aria-label="Seç">
+                    <button class="star-btn @(m.IsFavourite ? "on" : "")" type="button" aria-label="Yıldızla">
+                        <i class="bi @(m.IsFavourite ? "bi-star-fill" : "bi-star")"></i>
+                     </button>
+                   </div>
                     <span class="avatar @AvatarColor(m.SenderEmail)">@Initials(m.SenderEmail)</span>
                     <div class="mi-sender">
                         <span class="sender">@m.SenderEmail</span>
@@ -184,12 +185,13 @@
                Boş bırakılırsa işlemler yalnızca arayüzde uygulanır.
                Gönderilen alanlar: star → id, starred | read/unread/delete → ids (çoklu) */
             const ENDPOINTS = {
-                star: '',   // ör. '/Inbox/ToggleStar'
-                read: '',   // ör. '/Inbox/MarkAsRead'
-                unread: '',   // ör. '/Inbox/MarkAsUnread'
-                delete: ''    // ör. '/Inbox/Delete'
+                star: '/Message/ToggleStar',
+                read: '',
+                unread: '',
+                delete: ''
             };
             const PER_PAGE = 10;
+            let sortDir = 'desc';  
 
             const params = new URLSearchParams(location.search);
             const state = {
@@ -288,7 +290,7 @@
                     starred: all.filter(r => isOn(r, 'starred')).length,
                     attach: all.filter(r => isOn(r, 'attach')).length
                 };
-                const chips = [['all', 'Tümü'], ['unread', 'Okunmamış'], ['starred', 'Yıldızlı'], ['attach', 'Ekli']];
+                const chips = [['all', 'Tümü'], ['unread', 'Okunmamış'], ['starred', 'Yıldızlı']];
                 let html = chips.map(([k, t]) =>
                     `<button type="button" class="chip ${state.filter === k ? 'active' : ''}" data-filter="${k}">${t}<span class="n">${c[k]}</span></button>`
                 ).join('');
@@ -382,6 +384,22 @@
                         });
                 }, 5200);
             }
+            function applySort() {
+            rows()
+                .sort((a, b) => sortDir === 'asc' ? a.dataset.date - b.dataset.date : b.dataset.date - a.dataset.date)
+                .forEach(r => listEl.insertBefore(r, $('#emptyInbox')));
+                            }
+
+            $('#sortBtn').addEventListener('click', e => {
+                sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+                const btn = e.currentTarget;
+                btn.title = sortDir === 'desc' ? 'Sıralama: Yeni → Eski' : 'Sıralama: Eski → Yeni';
+                $('i', btn).className = `bi ${sortDir === 'desc' ? 'bi-sort-down' : 'bi-sort-up'}`;
+                state.page = 1;
+                applySort();
+                render();
+                showToast(sortDir === 'desc' ? 'Yeniden eskiye sıralandı.' : 'Eskiden yeniye sıralandı.', 'bi-sort-down');
+                });
 
             function openRow(r) {
                 state.selectedId = rowId(r);
@@ -391,6 +409,8 @@
             /* --- Arama (liste + navbar senkron) --- */
             const search = $('#listSearch');
             const globalSearch = $('#globalSearch');
+
+            applySort();
 
             function setQuery(value, source) {
                 state.query = value;
