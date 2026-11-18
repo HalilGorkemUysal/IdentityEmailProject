@@ -29,28 +29,51 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             // Inbox
             var values = await _context.Messages
                 .AsNoTracking()
-                .Include(x=> x.Category)
-                .Where(x => x.ReceiverEmail == relatedUser.Email && !x.DeletedByReceiver)
+                .Include(x => x.Category)
+                .Where(x => x.ReceiverEmail == relatedUser.Email && !x.DeletedByReceiver && !x.IsDraft)
                 .ToListAsync();
 
             return View(values);
         }
 
         [HttpGet]
-        public async Task<IActionResult> CreateMessage(int? replyTo)
+        public async Task<IActionResult> CreateMessage(int? replyTo, int? draftId)
         {
             ViewBag.Categories = new SelectList(_context.Categories.ToList(), "CategoryId", "CategoryName");
+
+            var user = await _userManager.GetUserAsync(User);
+
+            // Taslağı düzenlemeye aç
+            if (draftId.HasValue)
+            {
+                var draft = await DraftsOf(user.Email)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.MessageId == draftId.Value);
+
+                if (draft != null)
+                {
+                    ViewBag.DraftId = draft.MessageId;
+
+                    // Taslak bir yanıt ise önceki yazışmalar da görünsün
+                    if (draft.ParentMessageId.HasValue)
+                    {
+                        ViewBag.Thread = await GetThreadAsync(draft.ParentMessageId, user.Email);
+                        ViewBag.ReplyTo = draft.ParentMessageId;
+                    }
+
+                    return View(draft);
+                }
+            }
 
             var model = new Message();
 
             if (replyTo.HasValue)
             {
-                var user = await _userManager.GetUserAsync(User);
-
                 var original = await _context.Messages.FirstOrDefaultAsync(x =>
                     x.MessageId == replyTo.Value &&
                     x.ReceiverEmail == user.Email &&
-                    !x.DeletedByReceiver);
+                    !x.DeletedByReceiver &&
+                    !x.IsDraft);
 
                 if (original != null)
                 {
@@ -72,11 +95,15 @@ namespace MYAcademy_IdentityEmailProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateMessage(Message message, int? replyTo)
+        public async Task<IActionResult> CreateMessage(Message message, int? replyTo, int? draftId, bool saveDraft = false)
         {
             var user = await _userManager.GetUserAsync(User);
 
             message.MessageDetail = ToPlainText(message.MessageDetail);
+
+            // Taslak olarak kaydet: doğrulama yok
+            if (saveDraft)
+                return await SaveDraft(message, draftId, replyTo, user.Email);
 
             if (string.IsNullOrWhiteSpace(message.ReceiverEmail) ||
                 string.IsNullOrWhiteSpace(message.Subject) ||
@@ -85,35 +112,54 @@ namespace MYAcademy_IdentityEmailProject.Controllers
                 ModelState.AddModelError("", "Alıcı, konu ve mesaj alanları boş bırakılamaz.");
                 ViewBag.Categories = new SelectList(_context.Categories.ToList(), "CategoryId", "CategoryName");
                 ViewBag.Thread = await GetThreadAsync(replyTo, user.Email);
+                if (draftId.HasValue) ViewBag.DraftId = draftId;
                 return View(message);
             }
 
-            message.MessageId = 0;
-            message.SenderEmail = user.Email;
-            message.SendDate = DateTime.Now;
-            message.IsRead = false;
-            message.IsFavourite = false;
-            message.ParentMessageId = null;
+            // Taslaktan gönderiyorsak aynı satırı güncelle, değilse yeni satır ekle
+            Message target;
+            if (draftId.HasValue)
+            {
+                target = await DraftsOf(user.Email).FirstOrDefaultAsync(x => x.MessageId == draftId.Value);
+                if (target == null) return NotFound();
+
+                target.ReceiverEmail = message.ReceiverEmail;
+                target.Subject = message.Subject;
+                target.MessageDetail = message.MessageDetail;
+                target.CategoryId = message.CategoryId;
+            }
+            else
+            {
+                message.MessageId = 0;
+                target = message;
+                _context.Messages.Add(target);
+            }
+
+            target.SenderEmail = user.Email;
+            target.SendDate = DateTime.Now;
+            target.IsRead = false;
+            target.IsFavourite = false;
+            target.IsDraft = false;
+            target.ParentMessageId = null;
 
             if (replyTo.HasValue)
             {
                 var original = await _context.Messages.FirstOrDefaultAsync(x =>
                     x.MessageId == replyTo.Value &&
                     x.ReceiverEmail == user.Email &&
-                    !x.DeletedByReceiver);
+                    !x.DeletedByReceiver &&
+                    !x.IsDraft);
 
                 if (original != null)
                 {
-                    message.ParentMessageId = original.MessageId;
-                    message.ReceiverEmail = original.SenderEmail;   // yanıtın alıcısı hep orijinal gönderen
+                    target.ParentMessageId = original.MessageId;
+                    target.ReceiverEmail = original.SenderEmail;
                 }
             }
 
-            _context.Messages.Add(message);
             await _context.SaveChangesAsync();
             return RedirectToAction("SendBox");
         }
-
 
         public async Task<IActionResult> SendBox()
         {
@@ -121,7 +167,7 @@ namespace MYAcademy_IdentityEmailProject.Controllers
 
             var values = await _context.Messages
                     .AsNoTracking()
-                    .Where(x => x.SenderEmail == user.Email && !x.DeletedBySender)
+                    .Where(x => x.SenderEmail == user.Email && !x.DeletedBySender && !x.IsDraft)
                     .OrderByDescending(x => x.SendDate)
                     .ToListAsync();
 
@@ -134,7 +180,7 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             var user = await _userManager.GetUserAsync(User);
 
             var message = await _context.Messages
-                .FirstOrDefaultAsync(x => x.MessageId == id && x.ReceiverEmail == user.Email && !x.DeletedByReceiver);
+                .FirstOrDefaultAsync(x => x.MessageId == id && x.ReceiverEmail == user.Email && !x.DeletedByReceiver && !x.IsDraft);
 
             if (message == null)
                 return NotFound();
@@ -155,7 +201,8 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             var user = await _userManager.GetUserAsync(User);
 
             var message = await _context.Messages
-                .FirstOrDefaultAsync(x => x.MessageId == id && x.SenderEmail == user.Email && !x.DeletedBySender);
+                .FirstOrDefaultAsync(x => x.MessageId == id && x.SenderEmail == user.Email
+                && !x.DeletedBySender && !x.IsDraft);
 
             if (message == null)
                 return NotFound();
@@ -173,7 +220,7 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             var message = await _context.Messages
                 .FirstOrDefaultAsync(x => x.MessageId == id &&
                               x.ReceiverEmail == user.Email &&
-                              !x.DeletedByReceiver);
+                              !x.DeletedByReceiver && !x.IsDraft);
 
             if (message == null)
                 return NotFound();
@@ -193,7 +240,7 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             var user = await _userManager.GetUserAsync(User);
 
             var message = await _context.Messages
-                .FirstOrDefaultAsync(x => x.MessageId == id && x.ReceiverEmail == user.Email && !x.DeletedByReceiver);
+                .FirstOrDefaultAsync(x => x.MessageId == id && x.ReceiverEmail == user.Email && !x.DeletedByReceiver && !x.IsDraft);
 
             if (message == null)
                 return NotFound();
@@ -205,6 +252,68 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             return RedirectToAction(nameof(Inbox));
         }
 
+        private IQueryable<Message> DraftsOf(string email) =>
+    _context.Messages.Where(x => x.SenderEmail == email && x.IsDraft);
+
+        [HttpGet]
+        public async Task<IActionResult> Drafts()
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            var values = await DraftsOf(user.Email)
+                .AsNoTracking()
+                .OrderByDescending(x => x.SendDate)
+                .ToListAsync();
+
+            return View(values);
+        }
+
+        private async Task<IActionResult> SaveDraft(Message message, int? draftId, int? replyTo, string email)
+        {
+            var firstCategory = await _context.Categories
+                .OrderBy(c => c.CategoryId)
+                .Select(c => c.CategoryId)
+                .FirstAsync();
+
+            Message draft;
+            if (draftId.HasValue)
+            {
+                draft = await DraftsOf(email).FirstOrDefaultAsync(x => x.MessageId == draftId.Value);
+                if (draft == null) return NotFound();
+            }
+            else
+            {
+                draft = new Message { SenderEmail = email };
+                _context.Messages.Add(draft);
+            }
+
+            draft.ReceiverEmail = message.ReceiverEmail ?? "";
+            draft.Subject = string.IsNullOrWhiteSpace(message.Subject) ? "(Konusuz)" : message.Subject;
+            draft.MessageDetail = message.MessageDetail ?? "";
+            draft.CategoryId = message.CategoryId > 0 ? message.CategoryId : firstCategory;
+            draft.SendDate = DateTime.Now;
+            draft.IsDraft = true;
+            draft.IsRead = false;
+            draft.IsFavourite = false;
+            draft.ParentMessageId = replyTo;
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Drafts));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteDraft(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var draft = await DraftsOf(user.Email).FirstOrDefaultAsync(x => x.MessageId == id);
+            if (draft == null) return NotFound();
+
+            _context.Messages.Remove(draft);   // taslak kimseyle paylaşılmadığı için doğrudan silinir
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Drafts));
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteMessage(int id)
@@ -212,9 +321,9 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             var user = await _userManager.GetUserAsync(User);
 
             var message = await _context.Messages.FirstOrDefaultAsync(x =>
-                x.MessageId == id &&
+                x.MessageId == id && !x.IsDraft &&
                 ((x.ReceiverEmail == user.Email && !x.DeletedByReceiver) ||
-                 (x.SenderEmail == user.Email && !x.DeletedBySender)));
+                (x.SenderEmail == user.Email && !x.DeletedBySender)));
 
             if (message == null)
                 return NotFound();
@@ -332,8 +441,8 @@ namespace MYAcademy_IdentityEmailProject.Controllers
 
             var results = await _context.Messages
                 .AsNoTracking()
-                .Where(x => (x.ReceiverEmail == user.Email && !x.DeletedByReceiver) ||
-                            (x.SenderEmail == user.Email && !x.DeletedBySender))
+                .Where(x => (x.ReceiverEmail == user.Email && !x.DeletedByReceiver && !x.IsDraft) ||
+                            (x.SenderEmail == user.Email && !x.DeletedBySender && !x.IsDraft))
                 .Where(x => x.Subject.Contains(q) ||
                             x.MessageDetail.Contains(q) ||
                             x.SenderEmail.Contains(q) ||

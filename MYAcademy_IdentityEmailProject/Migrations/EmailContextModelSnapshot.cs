@@ -136,6 +136,9 @@ namespace MYAcademy_IdentityEmailProject.Migrations
                     b.Property<bool>("DeletedBySender")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDraft")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsFavourite")
                         .HasColumnType("bit");
 

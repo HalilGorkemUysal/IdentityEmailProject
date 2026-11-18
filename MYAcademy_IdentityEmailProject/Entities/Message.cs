@@ -15,9 +15,10 @@
 
         public int? ParentMessageId { get; set; }   // yanıtlanan mesajın id'si, ilk mesajda null
 
-        public bool DeletedBySender { get; set; }
+        public bool DeletedBySender { get; set; } //Çöp kutusuna taşı
         public bool DeletedByReceiver { get; set; }
-        public bool PurgedBySender { get; set; }
+        public bool PurgedBySender { get; set; } // Çöp kutusundan sil
         public bool PurgedByReceiver { get; set; }
+        public bool IsDraft { get; set; } // Taslak
     }
 }

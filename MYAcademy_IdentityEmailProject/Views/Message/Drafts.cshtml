@@ -1,0 +1,69 @@
+﻿@model List<Message>
+@using System.Globalization
+@using System.Text.RegularExpressions
+@{
+    ViewData["Title"] = "Taslaklar";
+    ViewData["ActiveMenu"] = "drafts";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+}
+@functions {
+    static readonly CultureInfo Tr = new("tr-TR");
+
+    static string Initials(string? s) =>
+        string.IsNullOrWhiteSpace(s) ? "?" : s.Trim()[..1].ToUpper(Tr);
+
+    static string Snippet(string? text, int max = 140)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        var t = Regex.Replace(text, @"\s+", " ").Trim();
+        return t.Length > max ? t[..max].TrimEnd() + "…" : t;
+    }
+}
+
+<section class="inbox">
+    <div class="panel list-panel">
+        <div class="list-head">
+            <div class="list-title">
+                <div>
+                    <h1>Taslaklar</h1>
+                    <div class="sub">@Model.Count taslak</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="msg-list">
+            @foreach (var m in Model)
+            {
+                var url = Url.Action("CreateMessage", "Message", new { draftId = m.MessageId });
+
+                <article class="msg-item" onclick="location.href='@url'" tabindex="0" title="Düzenle">
+                    <div class="lead"></div>
+                    <span class="avatar av-lav">@Initials(m.ReceiverEmail)</span>
+                    <div class="mi-sender">
+                        <span class="sender">@(string.IsNullOrEmpty(m.ReceiverEmail) ? "(Alıcı yok)" : "Kime: " + m.ReceiverEmail)</span>
+                    </div>
+                    <div class="mi-main">
+                        <span class="subject">@m.Subject</span>
+                        <span class="snippet">@Snippet(m.MessageDetail)</span>
+                    </div>
+                    <form asp-controller="Message" asp-action="DeleteDraft" asp-route-id="@m.MessageId" method="post"
+                          onclick="event.stopPropagation()"
+                          onsubmit="return confirm('Bu taslak silinecek. Emin misiniz?');">
+                        <button type="submit" class="tool-btn" title="Taslağı sil" style="color:#dc6478">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </form>
+                </article>
+            }
+
+            @if (!Model.Any())
+            {
+                <div class="empty-list">
+                    <div class="ic"><i class="bi bi-file-earmark-text"></i></div>
+                    <h6>Taslak yok</h6>
+                    <div>Yeni Mesaj sayfasında "Taslak Kaydet" ile kaydedebilirsin.</div>
+                </div>
+            }
+        </div>
+    </div>
+</section>

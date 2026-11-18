@@ -262,7 +262,6 @@
                 const sub = $('#inboxSub');
                 sub.textContent = `${total} mesaj${sub.dataset.email ? ' · ' + sub.dataset.email : ''}`;
                 $('#unreadPill').textContent = `${unread} okunmamış`;
-                setBadge('badgeInbox', unread);
                 setBadge('badgeStarred', starred);
 
                 renderPager(all);

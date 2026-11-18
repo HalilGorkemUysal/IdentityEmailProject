@@ -4,23 +4,28 @@
 }
 
 <aside class="app-sidebar" id="appSidebar" aria-label="Ana menü">
-    <a class="brand" data-page="inbox" href="#inbox">
+    <a class="brand" asp-controller="Message" asp-action="Inbox">
         <div class="brand-logo"><i class="bi bi-envelope-paper-heart-fill"></i></div>
         <div class="brand-name">Mail<span>ora</span></div>
     </a>
 
-    <button class="btn-compose" data-page="compose" type="button" data-tip="Yeni Mesaj">
-        <i class="bi bi-pencil-square"></i> <span class="lbl">Yeni Mesaj</span>
-    </button>
+    <a class="btn-compose" asp-controller="Message" asp-action="CreateMessage" data-page="compose" data-tip="Yeni Mesaj">
+    <i class="bi bi-pencil-square"></i> <span class="lbl">Yeni Mesaj</span>
+    </a>
 
     <div class="nav-section-title">Menü</div>
     <ul class="side-nav">
         <li><a class="side-link" data-page="dashboard" href="#dashboard" data-tip="Dashboard"><i class="bi bi-grid-1x2"></i> <span class="lbl">Dashboard</span></a></li>
-        <li><a class="side-link" data-page="inbox" asp-controller="Message" asp-action="Inbox" data-tip="Gelen Kutusu"><i class="bi bi-inbox"></i> <span class="lbl">Gelen Kutusu</span> <span class="side-badge" id="badgeInbox"></span></a></li>
-        <li><a class="side-link" data-page="sent" asp-controller="Message" asp-action="SendBox" data-tip="Gönderilenler"><i class="bi bi-send"></i> <span class="lbl">Gönderilenler</span></a></li>
-        <li><a class="side-link" data-page="drafts" href="#drafts" data-tip="Taslaklar"><i class="bi bi-file-earmark-text"></i> <span class="lbl">Taslaklar</span> <span class="side-badge muted">3</span></a></li>
-        <li><a class="side-link" data-page="starred" href="#starred" data-tip="Yıldızlı Mesajlar"><i class="bi bi-star"></i> <span class="lbl">Yıldızlı Mesajlar</span> <span class="side-badge muted" id="badgeStarred"></span></a></li>
-        <li><a class="side-link" data-page="trash" asp-controller="Message" asp-action="Trash" data-tip="Çöp Kutusu"><i class="bi bi-trash3"></i> <span class="lbl">Çöp Kutusu</span> <span class="side-badge muted" id="badgeTrash"></span></a></li>
+
+        <li><a class="side-link" data-page="inbox" asp-controller="Message" asp-action="Inbox" data-tip="Gelen Kutusu"><i class="bi bi-inbox"></i> <span class="lbl">Gelen Kutusu</span> <span class="side-badge" id="badgeInbox">@(ViewBag.InboxCount > 0 ? ViewBag.InboxCount : "")</span></a></li>
+
+        <li><a class="side-link" data-page="sent" asp-controller="Message" asp-action="SendBox" data-tip="Gönderilenler"><i class="bi bi-send"></i> <span class="lbl">Gönderilenler</span> <span class="side-badge muted" id="badgeSent">@(ViewBag.SentCount > 0 ? ViewBag.SentCount : "")</span></a></li>
+
+        <li><a class="side-link" data-page="drafts" asp-controller="Message" asp-action="Drafts" data-tip="Taslaklar"><i class="bi bi-file-earmark-text"></i> <span class="lbl">Taslaklar</span> <span class="side-badge muted" id="badgeDrafts">@(ViewBag.DraftCount > 0 ? ViewBag.DraftCount : "")</span></a></li>
+
+        <li><a class="side-link" data-page="starred" asp-controller="Message" asp-action="Starred" data-tip="Yıldızlı Mesajlar"><i class="bi bi-star"></i> <span class="lbl">Yıldızlı Mesajlar</span> <span class="side-badge muted" id="badgeStarred">@(ViewBag.StarredCount > 0 ? ViewBag.StarredCount : "")</span></a></li>
+        
+        <li><a class="side-link" data-page="trash" asp-controller="Message" asp-action="Trash" data-tip="Çöp Kutusu"><i class="bi bi-trash3"></i> <span class="lbl">Çöp Kutusu</span> <span class="side-badge muted" id="badgeTrash">@(ViewBag.TrashCount > 0 ? ViewBag.TrashCount : "")</span></a></li>
     </ul>
 
     <div class="nav-section-title">Hesap</div>

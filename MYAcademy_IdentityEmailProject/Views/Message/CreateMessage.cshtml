@@ -123,6 +123,11 @@
     @* Controller adınız farklıysa asp-controller ekleyin: asp-controller="Message" *@
     <form class="cmp-card" id="cmpForm" asp-action="CreateMessage" method="post" novalidate autocomplete="off">
 
+        @if (ViewBag.DraftId != null)
+        {
+            <input type="hidden" name="draftId" value="@ViewBag.DraftId" />
+        }
+
         <!-- Alıcı, kategori & konu -->
         <div class="cmp-fields">
             <div class="cmp-row">
@@ -251,6 +256,9 @@
         <div class="cmp-actions">
             <button type="submit" class="btn-send" id="cmpSend"><span class="lbl"><i class="bi bi-send-fill"></i> Mesajı Gönder</span></button>
             <button type="button" class="btn-soft danger" id="cmpClear"><i class="bi bi-x-circle"></i> Temizle</button>
+            <button type="submit" name="saveDraft" value="true" class="btn-soft" formnovalidate id="cmpDraft">
+                <i class="bi bi-file-earmark-text"></i> Taslak Kaydet
+        </button>
             <span class="cmp-hint"><span class="kbd-s">Ctrl</span> + <span class="kbd-s">Enter</span> ile gönder</span>
         </div>
     </form>
@@ -453,6 +461,9 @@
                 to.value = to.value.trim();
                 syncContent();
                 if (sending) { e.preventDefault(); return; }
+                    // Taslak Kaydet'e basıldıysa doğrulamayı atla          <-- EKLENDİ
+                const isDraft = e.submitter && e.submitter.name === 'saveDraft';   // <-- EKLENDİ
+                if (isDraft) { sending = true; dirty = false; return; }            // <-- EKLENDİ
                 if (!validate()) { e.preventDefault(); showToast('Lütfen işaretli alanları kontrol edin.', 'bi-exclamation-circle'); return; }
 
                 sending = true; dirty = false;
