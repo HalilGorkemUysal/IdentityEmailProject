@@ -213,26 +213,109 @@ namespace MYAcademy_IdentityEmailProject.Controllers
 
             var message = await _context.Messages.FirstOrDefaultAsync(x =>
                 x.MessageId == id &&
-                (x.ReceiverEmail == user.Email || x.SenderEmail == user.Email));
+                ((x.ReceiverEmail == user.Email && !x.DeletedByReceiver) ||
+                 (x.SenderEmail == user.Email && !x.DeletedBySender)));
 
             if (message == null)
                 return NotFound();
 
-            var isReceiver = message.ReceiverEmail == user.Email;
-            var isSender = message.SenderEmail == user.Email;
+            var isReceiver = message.ReceiverEmail == user.Email && !message.DeletedByReceiver;
+            var isSender = message.SenderEmail == user.Email && !message.DeletedBySender;
 
             if (isReceiver) message.DeletedByReceiver = true;
             if (isSender) message.DeletedBySender = true;
-
-
-            if (message.DeletedBySender && message.DeletedByReceiver)
-                _context.Messages.Remove(message);
 
             await _context.SaveChangesAsync();
 
             return isReceiver && !isSender
                 ? RedirectToAction(nameof(Inbox))
                 : RedirectToAction(nameof(SendBox));
+        }
+        // Çöp kutusundaki mesajlar: silinmiş ama kalıcı silinmemiş
+        private IQueryable<Message> TrashReceived(string email) =>
+            _context.Messages.Where(x => x.ReceiverEmail == email && x.DeletedByReceiver && !x.PurgedByReceiver);
+
+        private IQueryable<Message> TrashSent(string email) =>
+            _context.Messages.Where(x => x.SenderEmail == email && x.DeletedBySender && !x.PurgedBySender);
+
+        private IQueryable<Message> TrashOf(string email, string box) =>
+            box == "sent" ? TrashSent(email) : TrashReceived(email);
+
+        [HttpGet]
+        public async Task<IActionResult> Trash(string box = "received")
+        {
+            var user = await _userManager.GetUserAsync(User);
+            box = box == "sent" ? "sent" : "received";
+
+            ViewBag.Box = box;
+            ViewBag.ReceivedCount = await TrashReceived(user.Email).CountAsync();
+            ViewBag.SentCount = await TrashSent(user.Email).CountAsync();
+
+            var list = await TrashOf(user.Email, box)
+                .AsNoTracking()
+                .OrderByDescending(x => x.SendDate)
+                .ToListAsync();
+
+            return View(list);
+        }
+
+        // Kurtar: mesaj Gelen Kutusu / Gönderilenler'e döner
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestoreMessage(int id, string box)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            box = box == "sent" ? "sent" : "received";
+
+            var message = await TrashOf(user.Email, box).FirstOrDefaultAsync(x => x.MessageId == id);
+            if (message == null) return NotFound();
+
+            if (box == "sent") message.DeletedBySender = false;
+            else message.DeletedByReceiver = false;
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Trash), new { box });
+        }
+
+        // Tamamen sil: bu taraf için UI'dan ulaşılamaz olur
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PurgeMessage(int id, string box)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            box = box == "sent" ? "sent" : "received";
+
+            var message = await TrashOf(user.Email, box).FirstOrDefaultAsync(x => x.MessageId == id);
+            if (message == null) return NotFound();
+
+            PurgeSide(message, box);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Trash), new { box });
+        }
+
+        // Sekmedeki tüm mesajları tamamen sil
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EmptyTrash(string box)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            box = box == "sent" ? "sent" : "received";
+
+            var items = await TrashOf(user.Email, box).ToListAsync();
+            foreach (var m in items) PurgeSide(m, box);
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Trash), new { box });
+        }
+
+        // İlgili tarafı kalıcı sil işaretler; iki taraf da kalıcı sildiyse satırı DB'den kaldırır
+        private void PurgeSide(Message m, string box)
+        {
+            if (box == "sent") m.PurgedBySender = true;
+            else m.PurgedByReceiver = true;
+
+            if (m.PurgedBySender && m.PurgedByReceiver)
+                _context.Messages.Remove(m);
         }
 
         [HttpGet]
@@ -274,7 +357,8 @@ namespace MYAcademy_IdentityEmailProject.Controllers
                 var id = currentId.Value;
                 var m = await _context.Messages.AsNoTracking().FirstOrDefaultAsync(x =>
                     x.MessageId == id &&
-                    (x.ReceiverEmail == email || x.SenderEmail == email));
+                    ((x.ReceiverEmail == email && !x.PurgedByReceiver) ||
+                     (x.SenderEmail == email && !x.PurgedBySender)));
 
                 if (m == null) break;
 

@@ -17,5 +17,7 @@
 
         public bool DeletedBySender { get; set; }
         public bool DeletedByReceiver { get; set; }
+        public bool PurgedBySender { get; set; }
+        public bool PurgedByReceiver { get; set; }
     }
 }

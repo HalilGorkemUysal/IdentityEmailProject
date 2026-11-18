@@ -5,7 +5,9 @@
     ViewData["Title"] = "Çöp Kutusu";
     ViewData["ActiveMenu"] = "trash";
     Layout = "~/Views/MessageLayout/Index.cshtml";
-    var me = ViewBag.UserEmail as string ?? "";
+
+    var box = ViewBag.Box as string ?? "received";
+    var isSent = box == "sent";
 }
 @functions {
     static readonly CultureInfo Tr = new("tr-TR");
@@ -27,41 +29,59 @@
             <div class="list-title">
                 <div>
                     <h1>Çöp Kutusu</h1>
-                    <div class="sub">@Model.Count mesaj</div>
+                    <div class="sub">Buradan silinen mesajlara bir daha ulaşılamaz.</div>
                 </div>
                 @if (Model.Any())
                 {
-                    <form asp-controller="Message" asp-action="EmptyTrash" method="post"
-                          onsubmit="return confirm('Çöp kutusundaki tüm mesajlar kalıcı olarak silinecek. Emin misiniz?');">
+                    <form asp-controller="Message" asp-action="EmptyTrash" asp-route-box="@box" method="post"
+                          onsubmit="return confirm('Bu sekmedeki tüm mesajlar kalıcı olarak silinecek. Emin misiniz?');">
                         <button type="submit" class="chip" style="color:#dc6478">
-                            <i class="bi bi-trash3"></i> Çöpü Boşalt
+                            <i class="bi bi-trash3"></i> Bu Sekmeyi Boşalt
                         </button>
                     </form>
                 }
+            </div>
+
+            <div class="list-tools">
+                <div class="filter-chips">
+                    <a class="chip @(!isSent ? "active" : "")" style="text-decoration:none"
+                       asp-controller="Message" asp-action="Trash" asp-route-box="received">
+                        <i class="bi bi-inbox"></i> Alınan <span class="n">@ViewBag.ReceivedCount</span>
+                    </a>
+                    <a class="chip @(isSent ? "active" : "")" style="text-decoration:none"
+                       asp-controller="Message" asp-action="Trash" asp-route-box="sent">
+                        <i class="bi bi-send"></i> Gönderilen <span class="n">@ViewBag.SentCount</span>
+                    </a>
+                </div>
             </div>
         </div>
 
         <div class="msg-list">
             @foreach (var m in Model)
             {
-                var incoming = m.ReceiverEmail == me;
-                var person = incoming ? m.SenderEmail : m.ReceiverEmail;
+                var person = isSent ? m.ReceiverEmail : m.SenderEmail;
 
                 <article class="msg-item" style="cursor:default">
-                    <div class="lead"><i class="bi @(incoming ? "bi-inbox" : "bi-send")" title="@(incoming ? "Alınan" : "Gönderilen")"></i></div>
+                    <div class="lead"></div>
                     <span class="avatar av-lav">@Initials(person)</span>
-                    <div class="mi-sender"><span class="sender">@(incoming ? "" : "Kime: ")@person</span></div>
+                    <div class="mi-sender"><span class="sender">@(isSent ? "Kime: " : "")@person</span></div>
                     <div class="mi-main">
                         <span class="subject">@m.Subject</span>
                         <span class="snippet">@Snippet(m.MessageDetail)</span>
                     </div>
                     <div style="display:flex;gap:6px;align-items:center">
-                        <form asp-controller="Message" asp-action="RestoreMessage" asp-route-id="@m.MessageId" method="post">
-                            <button type="submit" class="tool-btn" title="Geri al"><i class="bi bi-arrow-counterclockwise"></i></button>
+                        <form asp-controller="Message" asp-action="RestoreMessage"
+                              asp-route-id="@m.MessageId" asp-route-box="@box" method="post">
+                            <button type="submit" class="chip" title="@(isSent ? "Gönderilenler'e geri taşı" : "Gelen Kutusu'na geri taşı")">
+                                <i class="bi bi-arrow-counterclockwise"></i> Kurtar
+                            </button>
                         </form>
-                        <form asp-controller="Message" asp-action="PurgeMessage" asp-route-id="@m.MessageId" method="post"
+                        <form asp-controller="Message" asp-action="PurgeMessage"
+                              asp-route-id="@m.MessageId" asp-route-box="@box" method="post"
                               onsubmit="return confirm('Bu mesaj kalıcı olarak silinecek. Emin misiniz?');">
-                            <button type="submit" class="tool-btn" title="Kalıcı olarak sil" style="color:#dc6478"><i class="bi bi-x-lg"></i></button>
+                            <button type="submit" class="chip" style="color:#dc6478" title="Tamamen sil">
+                                <i class="bi bi-x-lg"></i> Tamamen Sil
+                            </button>
                         </form>
                     </div>
                 </article>
@@ -71,7 +91,7 @@
             {
                 <div class="empty-list">
                     <div class="ic"><i class="bi bi-trash3"></i></div>
-                    <h6>Çöp kutusu boş</h6>
+                    <h6>Bu sekmede mesaj yok</h6>
                     <div>Sildiğiniz mesajlar burada görünür.</div>
                 </div>
             }
