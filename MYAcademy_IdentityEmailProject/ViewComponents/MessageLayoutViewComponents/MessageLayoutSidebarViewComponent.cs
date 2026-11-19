@@ -40,6 +40,9 @@ namespace MYAcademy_IdentityEmailProject.ViewComponents.MessageLayoutViewCompone
 
                 ViewBag.StarredCount = await _context.Messages.AsNoTracking()
                     .CountAsync(x => x.ReceiverEmail == email && !x.DeletedByReceiver && !x.IsDraft && x.IsFavourite);
+
+                ViewBag.StarredCount = await _context.Messages.AsNoTracking()
+                    .CountAsync(x => x.ReceiverEmail == email && !x.DeletedByReceiver && !x.IsDraft && x.IsFavourite);
             }
 
             return View(categories);

@@ -1,0 +1,129 @@
+﻿@model ProfileViewModel
+@{
+    ViewData["Title"] = "Profilim";
+    ViewData["ActiveMenu"] = "profile";
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var initials = ((Model.Name ?? "").Length > 0 ? Model.Name[..1] : "") + ((Model.Surname ?? "").Length > 0 ? Model.Surname[..1] : "");
+    initials = initials.ToUpperInvariant();
+    var ok = TempData["ProfileOk"] as string;
+    var pwdErr = TempData["PasswordError"] as string;
+}
+
+<style>
+    .pf { max-width: 980px; margin: 0 auto; display: grid; gap: 20px; }
+    .pf-card { background: #fff; border: 1px solid #e8e9f4; border-radius: 23px; padding: 28px; box-shadow: 0 12px 40px rgba(65,58,120,.06); }
+    .pf-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .pf-avatar { width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg,#ece8ff,#dcd6ff); color: #8174df; font-size: 30px; font-weight: 800; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+    .pf-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .pf-head h1 { font-size: 24px; font-weight: 800; margin: 0; }
+    .pf-head small { color: #8990a7; display: block; margin-top: 4px; }
+    .pf-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
+    .pf-stat { background: #f7f6ff; border-radius: 16px; padding: 16px; text-align: center; }
+    .pf-stat b { display: block; font-size: 24px; color: #5a4fb0; }
+    .pf-stat span { font-size: 12px; color: #8990a7; }
+    .pf-card h2 { font-size: 17px; font-weight: 800; margin: 0 0 18px; }
+    .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .pf-field { display: flex; flex-direction: column; gap: 6px; }
+    .pf-field.full { grid-column: 1 / -1; }
+    .pf-field label { font-size: 12.5px; font-weight: 700; color: #626882; }
+    .pf-field input, .pf-field textarea { border: 1px solid #e8e9f4; border-radius: 12px; padding: 11px 14px; font: inherit; font-size: 14px; background: #fff; outline: none; }
+    .pf-field input:focus, .pf-field textarea:focus { border-color: #8174df; box-shadow: 0 0 0 3px rgba(129,116,223,.15); }
+    .pf-field input[readonly] { background: #f5f5fa; color: #8990a7; }
+    .pf-field .err { color: #dc6478; font-size: 12px; }
+    .pf-hint { font-size: 11.5px; color: #9a9fb3; }
+    .pf-btn { border: none; border-radius: 12px; padding: 12px 22px; font: inherit; font-weight: 700; font-size: 14px; color: #fff; background: linear-gradient(100deg,#9184e9,#7163d3); cursor: pointer; }
+    .pf-btn:hover { transform: translateY(-1px); }
+    .pf-alert { border-radius: 12px; padding: 12px 16px; font-size: 13.5px; }
+    .pf-alert.ok { background: #e9f8f1; color: #2b7a5a; }
+    .pf-alert.bad { background: #fff0f2; color: #c14a60; }
+    @@media (max-width: 700px) { .pf-grid { grid-template-columns: 1fr; } .pf-card { padding: 20px; } }
+</style>
+
+<section class="pf">
+
+    @if (!string.IsNullOrEmpty(ok))
+    {
+        <div class="pf-alert ok"><i class="bi bi-check-circle"></i> @ok</div>
+    }
+    @if (!string.IsNullOrEmpty(pwdErr))
+    {
+        <div class="pf-alert bad"><i class="bi bi-exclamation-circle"></i> @pwdErr</div>
+    }
+
+    <div class="pf-card">
+        <div class="pf-head">
+            <div class="pf-avatar">
+                @if (!string.IsNullOrEmpty(Model.ImageUrl)) { <img src="@Model.ImageUrl" alt="Profil"> } else { @initials }
+            </div>
+            <div>
+                <h1>@Model.Name @Model.Surname</h1>
+                <small>@Model.Email</small>
+            </div>
+        </div>
+        <div class="pf-stats">
+            <div class="pf-stat"><b>@Model.InboxCount</b><span>Gelen mesaj</span></div>
+            <div class="pf-stat"><b>@Model.SentCount</b><span>Gönderilen</span></div>
+            <div class="pf-stat"><b>@Model.StarredCount</b><span>Yıldızlı</span></div>
+        </div>
+    </div>
+
+    <form class="pf-card" asp-controller="Profile" asp-action="Index" method="post">
+        <h2>Kişisel Bilgiler</h2>
+
+        @if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty]?.Errors.Count > 0)
+        {
+            <div class="pf-alert bad" style="margin-bottom:16px">@ViewData.ModelState[string.Empty].Errors.First().ErrorMessage</div>
+        }
+
+        <div class="pf-grid">
+            <div class="pf-field">
+                <label asp-for="Name">Ad</label>
+                <input asp-for="Name" maxlength="50">
+                <span class="err" asp-validation-for="Name"></span>
+            </div>
+            <div class="pf-field">
+                <label asp-for="Surname">Soyad</label>
+                <input asp-for="Surname" maxlength="50">
+                <span class="err" asp-validation-for="Surname"></span>
+            </div>
+            <div class="pf-field">
+                <label>E-posta</label>
+                <input value="@Model.Email" readonly>
+                <span class="pf-hint">E-posta mesajların kimliği olduğu için değiştirilemez.</span>
+            </div>
+            <div class="pf-field">
+                <label asp-for="PhoneNumber">Telefon</label>
+                <input asp-for="PhoneNumber" maxlength="20" placeholder="05xx xxx xx xx">
+                <span class="err" asp-validation-for="PhoneNumber"></span>
+            </div>
+            <div class="pf-field full">
+                <label asp-for="Description">Hakkımda</label>
+                <textarea asp-for="Description" rows="3" maxlength="300" placeholder="Kendinden kısaca bahset…"></textarea>
+                <span class="err" asp-validation-for="Description"></span>
+            </div>
+        </div>
+
+        <div style="margin-top:20px"><button type="submit" class="pf-btn">Kaydet</button></div>
+    </form>
+
+    <form class="pf-card" asp-controller="Profile" asp-action="ChangePassword" method="post">
+        <h2>Şifre Değiştir</h2>
+        <div class="pf-grid">
+            <div class="pf-field full">
+                <label for="cp">Mevcut şifre</label>
+                <input id="cp" name="CurrentPassword" type="password" autocomplete="current-password" required>
+            </div>
+            <div class="pf-field">
+                <label for="np">Yeni şifre</label>
+                <input id="np" name="NewPassword" type="password" autocomplete="new-password" required>
+            </div>
+            <div class="pf-field">
+                <label for="cf">Yeni şifre (tekrar)</label>
+                <input id="cf" name="ConfirmPassword" type="password" autocomplete="new-password" required>
+            </div>
+        </div>
+        <div style="margin-top:20px"><button type="submit" class="pf-btn">Şifreyi Güncelle</button></div>
+    </form>
+
+</section>

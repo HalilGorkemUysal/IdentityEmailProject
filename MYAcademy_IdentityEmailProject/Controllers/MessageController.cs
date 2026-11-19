@@ -454,6 +454,23 @@ namespace MYAcademy_IdentityEmailProject.Controllers
             return View(results);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Starred()
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            var values = await _context.Messages
+                .AsNoTracking()
+                .Where(x => x.ReceiverEmail == user.Email
+                         && !x.DeletedByReceiver
+                         && !x.IsDraft
+                         && x.IsFavourite)
+                .OrderByDescending(x => x.SendDate)
+                .ToListAsync();
+
+            return View(values);
+        }
+
         // Verilen mesajdan başlayıp yukarı doğru zinciri toplar (en yeni → en eski)
         private async Task<List<Message>> GetThreadAsync(int? startId, string email)
         {
