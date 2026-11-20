@@ -340,6 +340,44 @@ namespace MYAcademy_IdentityEmailProject.Controllers
                 ? RedirectToAction(nameof(Inbox))
                 : RedirectToAction(nameof(SendBox));
         }
+
+        // Inbox listesindeki toplu silme (checkbox + çöp ikonu).
+        // JS "ids" alanını birden fazla kez gönderir: ids=13&ids=14&ids=20 → List<int> ids
+        // Kurallar DeleteMessage ile aynı: sadece Deleted bayrakları true olur, mesaj çöp kutusuna gider.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMessages(List<int> ids)
+        {
+            if (ids == null || ids.Count == 0)
+                return BadRequest();
+
+            var user = await _userManager.GetUserAsync(User);
+
+            // Sadece bu kullanıcının, henüz silinmemiş mesajları (başkasının mesajı id ile silinemez)
+            var messages = await _context.Messages
+                .Where(x => ids.Contains(x.MessageId) && !x.IsDraft &&
+                    ((x.ReceiverEmail == user.Email && !x.DeletedByReceiver) ||
+                     (x.SenderEmail == user.Email && !x.DeletedBySender)))
+                .ToListAsync();
+
+            foreach (var message in messages)
+            {
+                if (message.ReceiverEmail == user.Email && !message.DeletedByReceiver)
+                    message.DeletedByReceiver = true;
+
+                if (message.SenderEmail == user.Email && !message.DeletedBySender)
+                    message.DeletedBySender = true;
+            }
+
+            await _context.SaveChangesAsync();
+
+            // JS'ten (fetch) geldiyse redirect yerine sadece "tamam" dön
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Ok(new { count = messages.Count });
+
+            return RedirectToAction(nameof(Inbox));
+        }
+
         // Çöp kutusundaki mesajlar: silinmiş ama kalıcı silinmemiş
         private IQueryable<Message> TrashReceived(string email) =>
             _context.Messages.Where(x => x.ReceiverEmail == email && x.DeletedByReceiver && !x.PurgedByReceiver);

@@ -28,21 +28,32 @@ namespace MYAcademy_IdentityEmailProject.ViewComponents.MessageLayoutViewCompone
             if (user != null)
             {
                 var email = user.Email;
+                var messages = _context.Messages.AsNoTracking();
 
-                ViewBag.InboxCount = await _context.Messages.AsNoTracking()
+                // Inbox action'ı ile aynı kural
+                ViewBag.InboxCount = await messages
                     .CountAsync(x => x.ReceiverEmail == email && !x.DeletedByReceiver && !x.IsDraft);
 
-                ViewBag.SentCount = await _context.Messages.AsNoTracking()
+                // SendBox action'ı ile aynı kural
+                ViewBag.SentCount = await messages
                     .CountAsync(x => x.SenderEmail == email && !x.DeletedBySender && !x.IsDraft);
 
-                ViewBag.DraftCount = await _context.Messages.AsNoTracking()
+                // DraftsOf(email) ile aynı kural
+                ViewBag.DraftCount = await messages
                     .CountAsync(x => x.SenderEmail == email && x.IsDraft);
 
-                ViewBag.StarredCount = await _context.Messages.AsNoTracking()
+                // Starred action'ı ile aynı kural
+                ViewBag.StarredCount = await messages
                     .CountAsync(x => x.ReceiverEmail == email && !x.DeletedByReceiver && !x.IsDraft && x.IsFavourite);
 
-                ViewBag.StarredCount = await _context.Messages.AsNoTracking()
-                    .CountAsync(x => x.ReceiverEmail == email && !x.DeletedByReceiver && !x.IsDraft && x.IsFavourite);
+                // Çöp kutusu = TrashReceived + TrashSent (Trash sayfasındaki iki sekmenin toplamı)
+                var trashReceived = await messages
+                    .CountAsync(x => x.ReceiverEmail == email && x.DeletedByReceiver && !x.PurgedByReceiver);
+
+                var trashSent = await messages
+                    .CountAsync(x => x.SenderEmail == email && x.DeletedBySender && !x.PurgedBySender);
+
+                ViewBag.TrashCount = trashReceived + trashSent;
             }
 
             return View(categories);

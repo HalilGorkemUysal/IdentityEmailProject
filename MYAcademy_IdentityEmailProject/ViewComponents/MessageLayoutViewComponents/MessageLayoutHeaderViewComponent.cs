@@ -25,7 +25,7 @@ namespace MYAcademy_IdentityEmailProject.ViewComponents.MessageLayoutViewCompone
             var roles = await _userManager.GetRolesAsync(user);
 
             var unreadQuery = _emailContext.Messages
-                .Where(m => m.ReceiverEmail == user.Email && !m.IsRead);
+                .Where(m => m.ReceiverEmail == user.Email && !m.IsRead && !m.DeletedByReceiver);
 
             var unreadCount = await unreadQuery.CountAsync();
 

@@ -108,20 +108,20 @@
                 var detailUrl = Url.Action("InboxDetail", "Message", new { id = m.MessageId }) ?? $"/Message/Inbox/{m.MessageId}";
 
                 <article class="msg-item @(m.IsRead ? "" : "unread")"
-                        data-id="@m.MessageId"
-                        data-href="@detailUrl"
-                        data-unread="@(m.IsRead ? "0" : "1")"
-                        data-starred="@(m.IsFavourite ? "1" : "0")"
-                        data-tag="@m.Category?.CategoryName"
-                        data-search="@search"
-                        data-date="@m.SendDate.ToString("yyyyMMddHHmmss")"
-                        tabindex="0" title="Mesajı aç">
-                   <div class="lead">
-                    <input type="checkbox" class="m-check row-check" aria-label="Seç">
-                    <button class="star-btn @(m.IsFavourite ? "on" : "")" type="button" aria-label="Yıldızla">
-                        <i class="bi @(m.IsFavourite ? "bi-star-fill" : "bi-star")"></i>
-                     </button>
-                   </div>
+                         data-id="@m.MessageId"
+                         data-href="@detailUrl"
+                         data-unread="@(m.IsRead ? "0" : "1")"
+                         data-starred="@(m.IsFavourite ? "1" : "0")"
+                         data-tag="@m.Category?.CategoryName"
+                         data-search="@search"
+                         data-date="@m.SendDate.ToString("yyyyMMddHHmmss")"
+                         tabindex="0" title="Mesajı aç">
+                    <div class="lead">
+                        <input type="checkbox" class="m-check row-check" aria-label="Seç">
+                        <button class="star-btn @(m.IsFavourite ? "on" : "")" type="button" aria-label="Yıldızla">
+                            <i class="bi @(m.IsFavourite ? "bi-star-fill" : "bi-star")"></i>
+                        </button>
+                    </div>
                     <span class="avatar @AvatarColor(m.SenderEmail)">@Initials(m.SenderEmail)</span>
                     <div class="mi-sender">
                         <span class="sender">@m.SenderEmail</span>
@@ -188,10 +188,10 @@
                 star: '/Message/ToggleStar',
                 read: '',
                 unread: '',
-                delete: ''
+                delete: '@Url.Action("DeleteMessages", "Message")'   // toplu silme → çöp kutusu
             };
             const PER_PAGE = 10;
-            let sortDir = 'desc';  
+            let sortDir = 'desc';
 
             const params = new URLSearchParams(location.search);
             const state = {
@@ -362,20 +362,45 @@
                 targets.forEach(r => { r.dataset.removed = '1'; state.checked.delete(rowId(r)); });
                 render();
 
-                let undone = false;
+                const targetIds = targets.map(rowId);
+                let done = false;   // geri alındı ya da sunucuya gönderildi
+                let timer = null;
+
+                // 5 sn dolmadan sayfadan çıkılırsa (mesaja tıklama, menü, yenile) silme yine kaydedilsin.
+                // sendBeacon, sayfa kapanırken bile isteği tamamlar.
+                const sendOnLeave = () => {
+                    if (done) return;
+                    done = true;
+                    const body = new URLSearchParams();
+                    targetIds.forEach(id => body.append('ids', id));
+                    const token = $('input[name="__RequestVerificationToken"]');
+                    if (token) body.append('__RequestVerificationToken', token.value);
+                    navigator.sendBeacon(ENDPOINTS.delete, body);
+                };
+
+                const finish = () => {
+                    done = true;
+                    clearTimeout(timer);
+                    window.removeEventListener('pagehide', sendOnLeave);
+                };
+
+                window.addEventListener('pagehide', sendOnLeave);
+
                 showToast(targets.length > 1 ? `${targets.length} mesaj çöp kutusuna taşındı.` : 'Mesaj çöp kutusuna taşındı.', 'bi-trash3', {
                     label: 'Geri Al',
                     onClick: () => {
-                        undone = true;
+                        if (done) return;
+                        finish();
                         targets.forEach(r => delete r.dataset.removed);
                         render();
                         showToast('İşlem geri alındı.', 'bi-arrow-counterclockwise');
                     }
                 });
 
-                setTimeout(() => {
-                    if (undone) return;
-                    post(ENDPOINTS.delete, { ids: targets.map(rowId) })
+                timer = setTimeout(() => {
+                    if (done) return;
+                    finish();
+                    post(ENDPOINTS.delete, { ids: targetIds })
                         .then(() => targets.forEach(r => r.remove()))
                         .catch(() => {
                             targets.forEach(r => delete r.dataset.removed); render();
@@ -384,10 +409,10 @@
                 }, 5200);
             }
             function applySort() {
-            rows()
-                .sort((a, b) => sortDir === 'asc' ? a.dataset.date - b.dataset.date : b.dataset.date - a.dataset.date)
-                .forEach(r => listEl.insertBefore(r, $('#emptyInbox')));
-                            }
+                rows()
+                    .sort((a, b) => sortDir === 'asc' ? a.dataset.date - b.dataset.date : b.dataset.date - a.dataset.date)
+                    .forEach(r => listEl.insertBefore(r, $('#emptyInbox')));
+            }
 
             $('#sortBtn').addEventListener('click', e => {
                 sortDir = sortDir === 'desc' ? 'asc' : 'desc';
@@ -398,7 +423,7 @@
                 applySort();
                 render();
                 showToast(sortDir === 'desc' ? 'Yeniden eskiye sıralandı.' : 'Eskiden yeniye sıralandı.', 'bi-sort-down');
-                });
+            });
 
             function openRow(r) {
                 state.selectedId = rowId(r);

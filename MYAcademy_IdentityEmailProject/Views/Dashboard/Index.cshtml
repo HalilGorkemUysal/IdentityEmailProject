@@ -1,0 +1,550 @@
+﻿@model DashboardViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActiveMenu"] = "dashboard";   // sidebar'daki data-page="dashboard" linkini aktif yapar
+    Layout = "~/Views/MessageLayout/Index.cshtml";
+
+    var tr = new CultureInfo("tr-TR");
+    var categoryTotal = Model.Categories.Sum(c => c.Count);
+    var periodText = $"{Model.FromDate.ToString("d MMM", tr)} – {Model.ToDate.ToString("d MMM", tr)}";
+}
+@functions {
+    // Önceki döneme göre fark: "+3", "−2", "0"
+    static string DeltaText(int now, int prev)
+    {
+        var d = now - prev;
+        return d > 0 ? $"+{d}" : d < 0 ? $"−{-d}" : "0";
+    }
+
+    static string DeltaIcon(int now, int prev) =>
+        now > prev ? "bi-arrow-up-right" : now < prev ? "bi-arrow-down-right" : "bi-dash";
+
+    static int Percent(int part, int total) => total == 0 ? 0 : (int)Math.Round(part * 100.0 / total);
+}
+
+<style>
+    .dash {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+    }
+
+    .dash-head h1 {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -.6px;
+        margin: 0;
+        color: #30334d;
+    }
+
+    .dash-head .sub {
+        margin-top: 4px;
+        font-size: 13.5px;
+        color: #85899B;
+    }
+
+    /* --- İstatistik kutuları --- */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    .stat-tile {
+        background: #fff;
+        border: 1px solid #ECEBF5;
+        border-radius: 22px;
+        padding: 20px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    .stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .stat-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #5D6075;
+    }
+
+    .stat-ic {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-size: 17px;
+        flex-shrink: 0;
+    }
+
+        .stat-ic.lav {
+            background: #EFECFB;
+            color: #6F63C4;
+        }
+
+        .stat-ic.mint {
+            background: #E3F5EE;
+            color: #2F7F61;
+        }
+
+    .stat-value {
+        font-size: 34px;
+        font-weight: 800;
+        letter-spacing: -1px;
+        line-height: 1;
+        color: #30334d;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .stat-foot {
+        font-size: 12.5px;
+        color: #85899B;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .stat-foot b {
+            color: #30334d;
+            font-weight: 700;
+        }
+
+    /* --- Grafik kartları --- */
+    .chart-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+        gap: 18px;
+    }
+
+    .dash-card {
+        background: #fff;
+        border: 1px solid #ECEBF5;
+        border-radius: 22px;
+        padding: 22px 24px;
+        min-width: 0;
+    }
+
+    .card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+        .card-head h2 {
+            font-size: 16px;
+            font-weight: 800;
+            margin: 0;
+            color: #30334d;
+        }
+
+        .card-head .sub {
+            font-size: 12.5px;
+            color: #85899B;
+            margin-top: 3px;
+        }
+
+    .legend {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        font-size: 12.5px;
+        color: #5D6075;
+    }
+
+        .legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .legend i {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+    .chart-box {
+        position: relative;
+        height: 280px;
+    }
+
+    .table-view {
+        margin-top: 14px;
+        font-size: 12.5px;
+    }
+
+        .table-view summary {
+            cursor: pointer;
+            color: #7467C7;
+            font-weight: 700;
+            width: fit-content;
+        }
+
+        .table-view table {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+        }
+
+        .table-view th, .table-view td {
+            padding: 7px 4px;
+            border-bottom: 1px solid #ECEBF5;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+            .table-view th:first-child, .table-view td:first-child {
+                text-align: left;
+            }
+
+        .table-view th {
+            color: #85899B;
+            font-weight: 600;
+        }
+
+    /* Halka grafik */
+    .donut-wrap {
+        position: relative;
+        width: 190px;
+        height: 190px;
+        margin: 4px auto 18px;
+    }
+
+    .donut-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+        .donut-center b {
+            font-size: 28px;
+            font-weight: 800;
+            color: #30334d;
+            line-height: 1;
+        }
+
+        .donut-center span {
+            font-size: 12px;
+            color: #85899B;
+            margin-top: 4px;
+        }
+
+    .cat-legend {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+    }
+
+        .cat-legend li {
+            display: grid;
+            grid-template-columns: 10px minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #5D6075;
+        }
+
+        .cat-legend .sw {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .cat-legend .nm {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cat-legend .ct {
+            color: #30334d;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cat-legend .pc {
+            color: #85899B;
+            width: 38px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+    .chart-empty {
+        height: 240px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        color: #85899B;
+        font-size: 13px;
+        text-align: center;
+    }
+
+        .chart-empty i {
+            font-size: 30px;
+            color: #C9C5E8;
+        }
+
+    @@media (max-width: 1199.98px) {
+        .stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .chart-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .stat-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-value {
+            font-size: 30px;
+        }
+    }
+</style>
+
+<section class="dash">
+
+    <div class="dash-head">
+        <h1>Dashboard</h1>
+        <div class="sub">Mesaj trafiğinizin özeti · son @Model.Days gün: @periodText</div>
+    </div>
+
+    <!-- İSTATİSTİK KUTULARI -->
+    <div class="stat-grid">
+
+        <div class="stat-tile">
+            <div class="stat-top">
+                <span class="stat-label">Gelen toplam mesaj</span>
+                <span class="stat-ic lav"><i class="bi bi-inbox"></i></span>
+            </div>
+            <div class="stat-value">@Model.TotalReceived</div>
+            <div class="stat-foot"><b>@Model.UnreadCount</b> okunmamış</div>
+        </div>
+
+        <div class="stat-tile">
+            <div class="stat-top">
+                <span class="stat-label">Giden toplam mesaj</span>
+                <span class="stat-ic mint"><i class="bi bi-send"></i></span>
+            </div>
+            <div class="stat-value">@Model.TotalSent</div>
+            <div class="stat-foot">Gönderilenler klasöründe</div>
+        </div>
+
+        <div class="stat-tile">
+            <div class="stat-top">
+                <span class="stat-label">Son @Model.Days günde alınan</span>
+                <span class="stat-ic lav"><i class="bi bi-envelope-arrow-down"></i></span>
+            </div>
+            <div class="stat-value">@Model.ReceivedLastDays</div>
+            <div class="stat-foot">
+                <i class="bi @DeltaIcon(Model.ReceivedLastDays, Model.ReceivedPrevDays)"></i>
+                <b>@DeltaText(Model.ReceivedLastDays, Model.ReceivedPrevDays)</b> önceki @Model.Days güne göre
+            </div>
+        </div>
+
+        <div class="stat-tile">
+            <div class="stat-top">
+                <span class="stat-label">Son @Model.Days günde gönderilen</span>
+                <span class="stat-ic mint"><i class="bi bi-envelope-arrow-up"></i></span>
+            </div>
+            <div class="stat-value">@Model.SentLastDays</div>
+            <div class="stat-foot">
+                <i class="bi @DeltaIcon(Model.SentLastDays, Model.SentPrevDays)"></i>
+                <b>@DeltaText(Model.SentLastDays, Model.SentPrevDays)</b> önceki @Model.Days güne göre
+            </div>
+        </div>
+    </div>
+
+    <!-- GRAFİKLER -->
+    <div class="chart-grid">
+
+        <!-- Sütun grafik -->
+        <div class="dash-card">
+            <div class="card-head">
+                <div>
+                    <h2>Günlük mesaj trafiği</h2>
+                    <div class="sub">Son @Model.Days günde alınan ve gönderilen mesajlar</div>
+                </div>
+                <div class="legend" aria-hidden="true">
+                    <span><i style="background:#8B7FD6"></i>Alınan</span>
+                    <span><i style="background:#3E9A77"></i>Gönderilen</span>
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="dailyChart" role="img"
+                        aria-label="Son @Model.Days günde alınan ve gönderilen mesaj sayıları. Ayrıntılar aşağıdaki tabloda."></canvas>
+            </div>
+
+            <!-- Grafiği göremeyenler / ekran okuyucular için aynı veri tablo olarak -->
+            <details class="table-view">
+                <summary>Tablo olarak göster</summary>
+                <table>
+                    <thead><tr><th>Gün</th><th>Alınan</th><th>Gönderilen</th></tr></thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.DayLabels.Count; i++)
+                        {
+                            <tr><td>@Model.DayLabels[i]</td><td>@Model.DailyReceived[i]</td><td>@Model.DailySent[i]</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </details>
+        </div>
+
+        <!-- Halka grafik -->
+        <div class="dash-card">
+            <div class="card-head">
+                <div>
+                    <h2>Kategorilere göre gelen mesajlar</h2>
+                    <div class="sub">Gelen kutunuzdaki tüm mesajlar</div>
+                </div>
+            </div>
+
+            @if (categoryTotal == 0)
+            {
+                <div class="chart-empty">
+                    <i class="bi bi-pie-chart"></i>
+                    Henüz gelen mesajınız yok.
+                </div>
+            }
+            else
+            {
+                <div class="donut-wrap">
+                    <canvas id="categoryChart" role="img" aria-label="Gelen mesajların kategori dağılımı. Ayrıntılar aşağıdaki listede."></canvas>
+                    <div class="donut-center"><b>@categoryTotal</b><span>mesaj</span></div>
+                </div>
+
+                <!-- Lejant: renk tek başına bilgi taşımasın diye ad + sayı + yüzde -->
+                <ul class="cat-legend">
+                    @foreach (var c in Model.Categories)
+                    {
+                        <li>
+                            <span class="sw" style="background:@c.Color"></span>
+                            <span class="nm">@c.Name</span>
+                            <span class="ct">@c.Count</span>
+                            <span class="pc">%@Percent(c.Count, categoryTotal)</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        (() => {
+            // Controller'dan gelen veriler (Json.Serialize: C# listesi → JS dizisi)
+            const daily = {
+                labels: @Json.Serialize(Model.DayLabels),
+                received: @Json.Serialize(Model.DailyReceived),
+                sent: @Json.Serialize(Model.DailySent)
+                    };
+            const categories = @Json.Serialize(Model.Categories);   // [{ name, count, color }, ...]
+
+            const INK = '#30334d', MUTED = '#85899B', GRID = '#F0EFF7', SURFACE = '#ffffff';
+            const COLOR_RECEIVED = '#8B7FD6', COLOR_SENT = '#3E9A77';
+
+            Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+            Chart.defaults.font.size = 12;
+            Chart.defaults.color = MUTED;
+
+            const tooltip = {
+                backgroundColor: '#2E3045', titleColor: '#fff', bodyColor: '#fff',
+                padding: 10, cornerRadius: 10, boxPadding: 4, usePointStyle: true
+            };
+
+            /* ---------- Sütun grafik ---------- */
+            const bar = (label, data, color) => ({
+                label, data,
+                backgroundColor: color,
+                borderRadius: 4,            // sadece üst köşeler yuvarlak
+                borderSkipped: 'start',     // alt kenar eksene düz otursun
+                maxBarThickness: 22,
+                categoryPercentage: 0.6,
+                barPercentage: 0.82         // iki sütun arasında küçük boşluk
+            });
+
+            new Chart(document.getElementById('dailyChart'), {
+                type: 'bar',
+                data: {
+                    labels: daily.labels,
+                    datasets: [bar('Alınan', daily.received, COLOR_RECEIVED), bar('Gönderilen', daily.sent, COLOR_SENT)]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },   // gün üzerine gelince ikisini birlikte göster
+                    plugins: {
+                        legend: { display: false },                     // lejant kartın başlığında
+                        tooltip: { ...tooltip, callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y} mesaj` } }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, border: { display: false }, ticks: { color: MUTED } },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0, color: MUTED, maxTicksLimit: 6 },   // 1.5 mesaj olmaz
+                            grid: { color: GRID },
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+
+            /* ---------- Halka grafik ---------- */
+            const donut = document.getElementById('categoryChart');
+            if (donut && categories.length) {
+                const total = categories.reduce((s, c) => s + c.count, 0);
+
+                new Chart(donut, {
+                    type: 'doughnut',
+                    data: {
+                        labels: categories.map(c => c.name),
+                        datasets: [{
+                            data: categories.map(c => c.count),
+                            backgroundColor: categories.map(c => c.color),
+                            borderColor: SURFACE,   // dilimler arasında 2px beyaz boşluk
+                            borderWidth: 2,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        cutout: '70%',
+                        plugins: {
+                            legend: { display: false },   // lejant grafiğin altında HTML liste
+                            tooltip: {
+                                ...tooltip,
+                                callbacks: { label: c => ` ${c.label}: ${c.parsed} mesaj (%${Math.round(c.parsed * 100 / total)})` }
+                            }
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+}
