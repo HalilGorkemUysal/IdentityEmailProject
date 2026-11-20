@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MYAcademy_IdentityEmailProject.Migrations
 {
     [DbContext(typeof(EmailContext))]
-    [Migration("20261118131717_AddPurgedFlagss")]
-    partial class AddPurgedFlagss
+    [Migration("20261119202036_InıtialMig")]
+    partial class InıtialMig
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -137,6 +137,9 @@ namespace MYAcademy_IdentityEmailProject.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("DeletedBySender")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDraft")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsFavourite")

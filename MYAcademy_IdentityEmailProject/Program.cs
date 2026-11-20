@@ -4,8 +4,22 @@ using MYAcademy_IdentityEmailProject.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddIdentity<AppUser, IdentityRole>()
-    .AddEntityFrameworkStores<EmailContext>().AddDefaultTokenProviders();
+builder.Services.AddIdentity<AppUser, IdentityRole>(opt =>
+{//_userManager.CreateAsync() çağrılınca çalışır.
+    opt.User.RequireUniqueEmail = true;//Email unique olsun
+
+    opt.Password.RequireDigit = true;
+    opt.Password.RequireNonAlphanumeric = true;
+    opt.Password.RequireUppercase = true;
+    opt.Password.RequireLowercase = true;
+    opt.Password.RequiredLength = 8;
+
+    opt.Lockout.MaxFailedAccessAttempts = 5;
+    opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+
+    opt.SignIn.RequireConfirmedEmail = true; //Email onayı olmadan giriş yapılmasın.
+}).AddEntityFrameworkStores<EmailContext>()
+    .AddDefaultTokenProviders();
 
 builder.Services.AddDbContext<EmailContext>();
 
