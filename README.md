@@ -34,6 +34,11 @@ Son 5 günün gelen/giden mesaj trafiği, kategori dağılımı ve özet kartlar
 |---|---|
 | [![Gelen Kutusu](docs/images/inbox.png.png)](docs/images/inbox.png.png?raw=true) | [![Gelen Kutusu 2](docs/images/inbox2.png.png)](docs/images/inbox2.png.png?raw=true) |
 
+### Yeni Mesaj
+Alıcı, kategori ve konu seçimi; zengin metin editörü, kelime sayacı ve taslak kaydetme.
+
+[![Yeni Mesaj](docs/images/createMessage.png)](docs/images/createMessage.png?raw=true)
+
 ### Çöp Kutusu
 
 [![Çöp Kutusu](docs/images/trash.png.png)](docs/images/trash.png.png?raw=true)
