@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MYAcademy_IdentityEmailProject.Entities;
+using MYAcademy_IdentityEmailProject.Models;
 
 namespace MYAcademy_IdentityEmailProject.Controllers
 {
@@ -16,24 +17,44 @@ namespace MYAcademy_IdentityEmailProject.Controllers
         [HttpGet]
         public IActionResult UserActivation()
         {
-            return View();
+            var userEmail = TempData["Email"] as string;
+            if (string.IsNullOrEmpty(userEmail))
+            {
+                return RedirectToAction("SignUp", "Register");
+            }
+
+            var model = new UserActivationViewModel
+            {
+                Email = userEmail,
+            };
+            return View(model);
+
         }
 
         [HttpPost]
-        public async Task<IActionResult> UserActivation(int Code)
+        public async Task<IActionResult> UserActivation(UserActivationViewModel model)
         {
-            var userEmail = TempData["Email"].ToString();
-            var user = await _userManager.FindByEmailAsync(userEmail);
-
-            if(user.ValidCode == Code)
+            if (!ModelState.IsValid)
             {
-                user.EmailConfirmed = true;
-                await _userManager.UpdateAsync(user);
-                return RedirectToAction("SignIn", "Login");
+                return View(model);
             }
 
-            TempData.Keep("Email");
-            return View();
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+
+            if(user == null || user.ValidCode != model.Code)
+            {
+                // Hata Code alanına bağlı → input'un altında görünür
+                ModelState.AddModelError(nameof(model.Code), "Doğrulama kodu hatalı.");
+                return View(model);
+            }
+
+            // Login'deki RequireConfirmedEmail kontrolü bu kolona bakıyor
+            user.EmailConfirmed = true;
+            await _userManager.UpdateAsync(user);
+
+            TempData["Success"] = "Hesabınız doğrulandı. Şimdi giriş yapabilirsiniz.";
+            return RedirectToAction("SignIn", "Login");
         }
     }
 }

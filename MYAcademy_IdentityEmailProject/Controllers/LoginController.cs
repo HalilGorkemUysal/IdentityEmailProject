@@ -64,5 +64,12 @@ namespace MYAcademy_IdentityEmailProject.Controllers
 
             return View(userLoginViewModel);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            return RedirectToAction("SignIn", "Login");
+        }
     }
 }
