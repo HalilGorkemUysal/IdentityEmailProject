@@ -26,29 +26,34 @@
 ### Dashboard
 Son 5 günün gelen/giden mesaj trafiği, kategori dağılımı ve özet kartları.
 
-![Dashboard](docs/images/dashboard.png.png)
+[![Dashboard](docs/images/dashboard.png.png)](docs/images/dashboard.png.png?raw=true)
 
 ### Gelen Kutusu
 
 | Mesaj listesi | Mesaj detayı ve önceki yazışmalar |
 |---|---|
-| ![Gelen Kutusu](docs/images/inbox.png.png) | ![Gelen Kutusu 2](docs/images/inbox2.png.png) |
+| [![Gelen Kutusu](docs/images/inbox.png.png)](docs/images/inbox.png.png?raw=true) | [![Gelen Kutusu 2](docs/images/inbox2.png.png)](docs/images/inbox2.png.png?raw=true) |
+
+### Yeni Mesaj
+Alıcı, kategori ve konu seçimi; zengin metin editörü, kelime sayacı ve taslak kaydetme.
+
+[![Yeni Mesaj](docs/images/createMessage.png)](docs/images/createMessage.png?raw=true)
 
 ### Çöp Kutusu
 
-![Çöp Kutusu](docs/images/trash.png.png)
+[![Çöp Kutusu](docs/images/trash.png.png)](docs/images/trash.png.png?raw=true)
 
 ### Profil
 
 | Profil bilgileri | Hakkımda ve şifre değiştirme |
 |---|---|
-| ![Profil 1](docs/images/profil1.png.png) | ![Profil 2](docs/images/profile2.png.png) |
+| [![Profil 1](docs/images/profil1.png.png)](docs/images/profil1.png.png?raw=true) | [![Profil 2](docs/images/profile2.png.png)](docs/images/profile2.png.png?raw=true) |
 
 ### Kimlik Doğrulama Ekranları
 
 | Kayıt Ol | E-posta Doğrulama | Şifremi Unuttum |
 |---|---|---|
-| ![Kayıt](docs/images/register.png.png) | ![E-posta Doğrulama](docs/images/emailVerificaiton.png.png) | ![Şifremi Unuttum](docs/images/forgottenPassword.png.png) |
+| [![Kayıt](docs/images/register.png.png)](docs/images/register.png.png?raw=true) | [![E-posta Doğrulama](docs/images/emailVerificaiton.png.png)](docs/images/emailVerificaiton.png.png?raw=true) | [![Şifremi Unuttum](docs/images/forgottenPassword.png.png)](docs/images/forgottenPassword.png.png?raw=true) |
 
 ---
 
