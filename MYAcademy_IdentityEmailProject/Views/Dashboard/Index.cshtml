@@ -459,6 +459,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         (() => {
+            // Chart.js CDN ile global olarak yükleniyor; editörün (TS2304) tanıması için yerel değişkene alıyoruz
+            const Chart = window['Chart'];
             // Controller'dan gelen veriler (Json.Serialize: C# listesi → JS dizisi)
             const daily = {
                 labels: @Json.Serialize(Model.DayLabels),
