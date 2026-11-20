@@ -361,10 +361,28 @@
 
         .forgot-row {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between; /* flex-end idi; artık iki öğe iki uca yaslanıyor */
+            align-items: center;
             margin-top: -9px;
             margin-bottom: 27px;
         }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555a73;
+            cursor: pointer;
+        }
+
+            .remember-me input {
+                width: 16px;
+                height: 16px;
+                accent-color: var(--primary); /* checkbox'ı tema rengine boyar */
+                cursor: pointer;
+            }
 
         .forgot-link {
             text-decoration: none;
@@ -645,7 +663,8 @@
                           method="post"
                           asp-route-returnUrl="@ViewBag.ReturnUrl"
                           class="login-form"
-                          id="loginForm">
+                          id="loginForm"
+                          novalidate>
 
                         <div asp-validation-summary="ModelOnly"
                              class="validation-summary"
@@ -711,14 +730,18 @@
                                   class="field-error"></span>
                         </div>
 
-                        <!-- ŞİFREMİ UNUTTUM -->
+                        <!-- BENİ HATIRLA + ŞİFREMİ UNUTTUM -->
                         <div class="forgot-row">
 
-                            <a href="/PasswordChange/ForgetPassword/"
+                            <label class="remember-me">
+                                <input asp-for="RememberMe" type="checkbox" />
+                                <span>@Html.DisplayNameFor(m => m.RememberMe)</span>
+                            </label>
+
+                            <a asp-controller="PasswordChange"
+                               asp-action="ForgetPassword"
                                class="forgot-link">
-
                                 Şifreni mi unuttun?
-
                             </a>
                         </div>
 
@@ -763,13 +786,13 @@
     </main>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
 
             const password = document.getElementById("Password");
             const toggleBtn = document.getElementById("togglePassword");
 
             if (password && toggleBtn) {
-                toggleBtn.addEventListener("click", function() {
+                toggleBtn.addEventListener("click", function () {
 
                     const isHidden = password.type === "password";
 
@@ -796,7 +819,7 @@
             const loginBtn = document.getElementById("loginBtn");
 
             if (loginForm && loginBtn) {
-                loginForm.addEventListener("submit", function(event) {
+                loginForm.addEventListener("submit", function (event) {
 
                     if (!loginForm.checkValidity()) {
                         return;
@@ -804,7 +827,7 @@
 
                     // MVC doğrulama veya başka JavaScript
                     // submit işlemini iptal etmişse kilitleme.
-                    setTimeout(function() {
+                    setTimeout(function () {
                         if (event.defaultPrevented) return;
 
                         loginBtn.disabled = true;

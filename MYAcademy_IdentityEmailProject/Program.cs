@@ -17,7 +17,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(opt =>
     opt.Lockout.MaxFailedAccessAttempts = 5;
     opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
 
-    opt.SignIn.RequireConfirmedEmail = true; //Email onayı olmadan giriş yapılmasın.
+    //opt.SignIn.RequireConfirmedEmail = true; //Email onayı olmadan giriş yapılmasın.
 }).AddEntityFrameworkStores<EmailContext>()
     .AddDefaultTokenProviders();
 

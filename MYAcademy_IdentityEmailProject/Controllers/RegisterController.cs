@@ -5,16 +5,19 @@ using Microsoft.AspNetCore.Mvc;
 using MimeKit;
 using MYAcademy_IdentityEmailProject.Entities;
 using MYAcademy_IdentityEmailProject.Models;
+using System.Security.Cryptography;
 
 namespace MYAcademy_IdentityEmailProject.Controllers
 {
     public class RegisterController : Controller
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly ILogger<RegisterController> _logger;
 
-        public RegisterController(UserManager<AppUser> userManager)
+        public RegisterController(UserManager<AppUser> userManager, ILogger<RegisterController> logger)
         {
             _userManager = userManager;
+            _logger = logger;
         }
 
         public IActionResult SignUp()
@@ -25,8 +28,13 @@ namespace MYAcademy_IdentityEmailProject.Controllers
         [HttpPost]
         public async Task<IActionResult> SignUp(UserRegisterViewModel userRegisterViewModel)
         {
-            Random random = new Random();
-            int validCode = random.Next(100000, 1000000);
+            // 1) ViewModel attribute'larına uymuyorsa formu dolu şekilde geri göster
+            if (!ModelState.IsValid)
+            {
+                return View(userRegisterViewModel);
+            }
+
+            int validCode = RandomNumberGenerator.GetInt32(100000, 1000000);
 
             AppUser appUser = new AppUser()
             {
@@ -39,7 +47,17 @@ namespace MYAcademy_IdentityEmailProject.Controllers
 
             var result = await _userManager.CreateAsync(appUser, userRegisterViewModel.Password);
 
-            if (result.Succeeded)
+            // 2) Program.cs kurallarına takıldıysa (şifre, aynı email, aynı kullanıcı adı) hataları göster
+            if (!result.Succeeded)
+            {
+                foreach (var item in result.Errors)
+                {
+                    ModelState.AddModelError("", item.Description);//hata tüm forma ait olur.
+                }
+                return View(userRegisterViewModel);
+            }
+
+            try
             {
                 MimeMessage mimeMessage = new MimeMessage();
                 MailboxAddress mailboxAddressFrom = new MailboxAddress("Mailora Yönetim Paneli", "halilgorkemuysal@gmail.com");
@@ -60,13 +78,20 @@ namespace MYAcademy_IdentityEmailProject.Controllers
                 smtpClient.Send(mimeMessage);
                 smtpClient.Disconnect(true);
 
-                //return RedirectToAction("SignIn","Login");
-
-                TempData["Email"] = userRegisterViewModel.Email;
-                return RedirectToAction("UserActivation", "Activation");
             }
+            catch (Exception ex)
+            {
+                // Mail gitmediyse kaydı geri al, kullanıcı tekrar deneyebilsin
+                await _userManager.DeleteAsync(appUser);
+                _logger.LogError(ex, "Doğrulama maili gönderilemedi: {Email}", userRegisterViewModel.Email);
 
-            return View();
+                ModelState.AddModelError("", "Doğrulama maili gönderilemedi. Lütfen daha sonra tekrar deneyin.");
+                return View(userRegisterViewModel);
+            }
+            //return RedirectToAction("SignIn","Login");
+
+            TempData["Email"] = userRegisterViewModel.Email;
+            return RedirectToAction("UserActivation", "Activation");
         }
     }
 }

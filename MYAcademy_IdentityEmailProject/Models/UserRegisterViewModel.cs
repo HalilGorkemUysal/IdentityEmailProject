@@ -35,5 +35,8 @@ namespace MYAcademy_IdentityEmailProject.Models
         [Compare(nameof(Password),ErrorMessage ="Şifreler uyuşmuyor")]
         [Display(Name = "Şifre Tekrar")]
         public string PasswordConfirm { get; set; }
+
+        [Range(typeof(bool), "true", "true", ErrorMessage = "KVKK ve kullanıcı sözleşmesini kabul etmelisiniz.")]
+        public bool AcceptTerms { get; set; }
     }
 }
